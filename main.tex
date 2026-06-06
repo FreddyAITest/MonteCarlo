@@ -1,43 +1,25 @@
 % !TEX program = xelatex
 \documentclass[11pt,a4paper]{article}
-
-% -- Seitenränder (4cm rechts = Korrekturrand) -------------------
 \usepackage[a4paper, left=2.5cm, right=4cm, top=2.5cm, bottom=2cm]{geometry}
-
-% -- Zeilenabstand 1,5 --------------------------------------------
 \usepackage{setspace}
 \onehalfspacing
-
-% -- Sprache & Schrift (Times New Roman 11pt) --------------------
 \usepackage{fontspec}
 \setmainfont{Times New Roman}
-
 \usepackage{polyglossia}
 \setmainlanguage[spelling=new]{german}
-
-% -- Mathematik ---------------------------------------------------
 \usepackage{amsmath,amssymb,mathtools}
-
-% -- Tabellen -----------------------------------------------------
 \usepackage{booktabs}
 \usepackage{tabularx}
 \usepackage{array}
-
-% -- Grafik -------------------------------------------------------
 \usepackage{graphicx}
 \usepackage{float}
-
-% -- Sonstiges ----------------------------------------------------
 \usepackage{enumitem}
 \usepackage{hyperref}
 \usepackage{xcolor}
 \usepackage{caption}
 \usepackage{parskip}
-
-% -- Fußnoten 10pt ------------------------------------------------
 \renewcommand{\footnotesize}{\fontsize{10pt}{12pt}\selectfont}
 
-% -- APA-Style für Abbildungen & Tabellen ------------------------
 \captionsetup[table]{
     position=above,
     justification=raggedright,
@@ -55,7 +37,6 @@
     textfont=it
 }
 
-% -- Hyperref -----------------------------------------------------
 \hypersetup{
   colorlinks=true,
   linkcolor=blue!70!black,
@@ -65,12 +46,9 @@
   pdfauthor={Elias Scho \& Fabian Finkenzeller},
 }
 
-
-% -- Metadaten ----------------------------------------------------
-\title{\textbf{Monte-Carlo-Simulation zur stochastischen Bewertung von Investitionsrenditen in der Ölindustrie}}
-\author{Elias Scho & Fabian Finkenzeller}
-\date{April 2026}
-
+\title{\textbf{Monte-Carlo-Simulation zur stochastischen Bewertung von Investitionsrenditen in der \"Olindustrie}}
+\author{Elias Scho \& Fabian Finkenzeller}
+\date{Juni 2026}
 \begin{document}
 
 % ==================================================================
@@ -85,8 +63,8 @@
 \midrule
 Titel       & Stochastische ROI-Bewertung mittels Monte-Carlo-Simulation \\
 Typ         & Wissenschaftliches Working Paper \\
-Version     & 2.0 \\
-Datum       & April 2026 \\
+Version     & 3.0 \\
+Datum       & Juni 2026 \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -94,7 +72,7 @@ Datum       & April 2026 \\
 \vspace{1.5cm}
 
 \begin{abstract}\noindent
-Die Öl- und Gasindustrie zeichnet sich durch extreme Kapitalintensität und hohe Unsicherheit aus. Herkömmliche deterministische Investitionsrechnungen, die auf Einzelpunktschätzungen basieren, bilden die realen Projektrisiken systematisch unzureichend ab. Diese Arbeit entwickelt ein stochastisches ROI-Modell, das die Unsicherheiten ölindustrieller Investitionsentscheidungen methodisch quantifiziert. Das Modell simuliert vier Kernvariablen dieser Industrien mittels Monte-Carlo-Simulation. Die resultierende ROI-Verteilung liefert nicht nur einen Erwartungswert, sondern ein vollständiges Risikoprofil inklusive Value at Risk und Verlustwahrscheinlichkeit.
+Die \"Olindustrie zeichnet sich durch extreme Kapitalintensit\"at und hohe Unsicherheit aus. Herk\"ommliche deterministische Investitionsrechnungen, die auf Einzelpunktsch\"atzungen basieren, bilden die realen Projektrisiken systematisch unzureichend ab. Diese Arbeit entwickelt ein stochastisches ROI-Modell, das die Unsicherheiten \"olindustrieller Investitionsentscheidungen methodisch quantifiziert. Das Modell simuliert vier Kernvariablen mittels Monte-Carlo-Simulation: CAPEX, OPEX, F\"ordervolumen und \"Olpreis. Die resultierende ROI-Verteilung liefert nicht nur einen Erwartungswert, sondern ein vollst\"andiges Risikoprofil inklusive Value at Risk und Verlustwahrscheinlichkeit.
 \end{abstract}
 
 \newpage
@@ -108,33 +86,35 @@ Die Öl- und Gasindustrie zeichnet sich durch extreme Kapitalintensität und hoh
 
 \subsection{Motivation}
 
-Die Öl- und Gasindustrie zeichnet sich durch eine einzigartige Kombination von extremer Kapitalintensität und hoher Unsicherheit aus, begleitet von langen Investitionszeiträumen. Einzelne Projekte wie Offshore-Bohrungen, Frackingvorhaben oder Pipelineinfrastruktur erfordern Investitionen im Bereich von Hunderten Millionen bis Milliarden Euro, bevor auch nur ein einziges Barrel gefördert wird. Gleichzeitig unterliegen die treibenden Erfolgsfaktoren, nämlich Rohstoffpreise, geologische Reserven, Betriebskosten und regulatorische Rahmenbedingungen, einer Volatilität, die herkömmliche Planungsmethoden systematisch überfordert.
+Die \"Olindustrie zeichnet sich durch eine einzigartige Kombination von extremer Kapitalintensit\"at und hoher Unsicherheit aus, begleitet von langen Investitionszeitr\"aumen. Einzelne Projekte wie Offshore-Bohrungen, Frackingvorhaben oder Pipelineinfrastruktur erfordern Investitionen im Bereich von Hunderten Millionen bis Milliarden Euro, bevor auch nur ein einziges Barrel gef\"ordert wird. Gleichzeitig unterliegen die treibenden Erfolgsfaktoren, n\"amlich Rohstoffpreise, geologische Reserven, Betriebskosten und regulatorische Rahmenbedingungen, einer Volatilit\"at, die herk\"ommliche Planungsmethoden systematisch \"uberfordert.
 
-Die Finanzkrise 2008, der Ölpreis-Crash 2014–2016 und die COVID-bedingte Preiskatastrophe 2020 haben eindrucksvoll gezeigt, dass deterministische Planungsansätze, die auf Einzelpunktschätzungen (\textit{Point Estimates}) basieren, die Realität systematisch verfehlen. Ein Projekt, das bei einem Ölpreis von \$80/Barrel hervorragend rentabel erscheint, kann bei \$40/Barrel katastrophal sein. Die Geschichte zeigt, dass solche Preisschwankungen innerhalb weniger Monate auftreten können.
+Die Finanzkrise 2008, der \"Olpreis-Crash 2014--2016 und die COVID-bedingte Preiskatastrophe 2020 haben eindrucksvoll gezeigt, dass deterministische Planungsans\"atze, die auf Einzelpunktsch\"atzungen (\textit{Point Estimates}) basieren, die Realit\"at systematisch verfehlen. Ein Projekt, das bei einem \"Olpreis von \$80/Barrel hervorragend rentabel erscheint, kann bei \$40/Barrel katastrophal sein.
 
 \subsection{Problemstellung}
 
-Herkömmliche deterministische Investitionsrechnungen basieren typischerweise auf punktuellen Schätzwerten für Ölpreis, Fördermengen und Kosten. Sie verdichten das Ergebnis zu einem einzigen ROI-Wert, der eine irreführende Gewissheit über die Projektrentabilität suggeriert. Dieser Ansatz greift jedoch zu kurz, da er drei kritische Aspekte ignoriert:
+Herk\"ommliche deterministische Investitionsrechnungen basieren typischerweise auf punktuellen Sch\"atzwerten f\"ur \"Olpreis, F\"ordermengen und Kosten. Sie verdichten das Ergebnis zu einem einzigen ROI-Wert, der eine irref\"uhrende Gewissheit \"uber die Projektrentabilit\"at suggeriert. Dieser Ansatz ignoriert drei kritische Aspekte:
 
 \begin{enumerate}[label=\arabic*., itemsep=4pt]
-  \item \textbf{Unsicherheit der Inputgrößen}: Keine der vier Kernvariablen (CAPEX, OPEX, Fördervolumen, Ölpreis) ist mit Sicherheit vorhersehbar.
-  \item \textbf{Asymmetrische Risikoprofile}: Die Kernvariablen folgen nicht einheitlich einer klassischen, symmetrischen Normalverteilung. Vielmehr weisen sie individuelle, oft asymmetrische Risikoprofile auf.
-  \item \textbf{Nicht-lineare Aggregation}: Die Wechselwirkungen zwischen den Variablen (Korrelationen und nicht-lineare Effekte) werden in deterministischen Modellen nicht abgebildet.
-\end{enumerate}\newpage
+  \item \textbf{Unsicherheit der Inputgr\"o{\ss}en}: Keine der vier Kernvariablen (CAPEX, OPEX, F\"ordervolumen, \"Olpreis) ist mit Sicherheit vorhersehbar.
+  \item \textbf{Asymmetrische Risikoprofile}: Die Kernvariablen folgen nicht einheitlich einer symmetrischen Normalverteilung, sondern weisen individuelle, oft asymmetrische Risikoprofile auf.
+  \item \textbf{Nicht-lineare Aggregation}: Die Wechselwirkungen zwischen den Variablen werden in deterministischen Modellen nicht abgebildet.
+\end{enumerate}
 
-Besonders relevant ist diese Problematik für investitionsbasierte Antragsdaten (Ex-ante-Daten). Da Investitionsentscheidungen üblicherweise auf reinen Prognosen und Schätzwerten beruhen, kommt es bei statischen Modellen fast unweigerlich zu systematischen Verzerrungen bei der Risikobewertung.
+Besonders relevant ist diese Problematik f\"ur investitionsbasierte Antragsdaten (Ex-ante-Daten). Da Investitionsentscheidungen \"ublicherweise auf reinen Prognosen und Sch\"atzwerten beruhen, kommt es bei statischen Modellen fast unweigerlich zu systematischen Verzerrungen bei der Risikobewertung.
 
 \subsection{Zielsetzung}
 
-Das Ziel dieses Papers ist die Entwicklung und Darstellung eines stochastischen ROI-Modells, das die Unsicherheiten ölindustrieller Investitionsentscheidungen methodisch sauber quantifiziert. Konkret werden wir:
+Das Ziel dieses Papers ist die Entwicklung und Darstellung eines stochastischen ROI-Modells, das die Unsicherheiten \"olindustrieller Investitionsentscheidungen methodisch sauber quantifiziert. Konkret werden wir:
 
 \begin{itemize}[itemsep=2pt]
-  \item Ein mathematisch fundiertes Vier-Variablen-Modell entwickeln, das CAPEX, OPEX, Fördervolumen und Ölpreis als Zufallsvariablen modelliert
-  \item Die Wahl der Wahrscheinlichkeitsverteilungen wissenschaftlich als auch empirisch begründen, sofern notwendig
+  \item Ein mathematisch fundiertes Vier-Variablen-Modell entwickeln, das CAPEX, OPEX, F\"ordervolumen und \"Olpreis als Zufallsvariablen modelliert
+  \item Die Wahl der Wahrscheinlichkeitsverteilungen wissenschaftlich begr\"unden
   \item Eine Monte-Carlo-Simulation implementieren, die die aggregierte ROI-Verteilung berechnet
   \item Die Limitationen des Ansatzes kritisch reflektieren
 \end{itemize}
+
 \newpage
+
 % ==================================================================
 % ABSCHNITT 2: THEORETISCHER HINTERGRUND
 % ==================================================================
@@ -142,49 +122,50 @@ Das Ziel dieses Papers ist die Entwicklung und Darstellung eines stochastischen 
 
 \subsection{Investitionsrechnung unter Unsicherheit}
 
-Die klassische Investitionsrechnung kennt mehrere Verfahren zur Bewertung von Investitionen: Statische Verfahren (Rentabilitätsrechnung, Amortisationsrechnung) und dynamische Verfahren (Kapitalwertmethode, Interner Zinsfuß, Annuitätenmethode). Allen gemeinsam ist, dass sie in der Regel mit deterministischen Cashflows arbeiten.
+Die klassische Investitionsrechnung kennt mehrere Verfahren zur Bewertung von Investitionen: Statische Verfahren (Rentabilit\"atsrechnung, Amortisationsrechnung) und dynamische Verfahren (Kapitalwertmethode, Interner Zinsfu{\ss}, Annuit\"atenmethode). Allen gemeinsam ist, dass sie in der Regel mit deterministischen Cashflows arbeiten.
 
-Der traditionelle Return on Investment (ROI) \cite{weber2016} berechnet sich gemäß:
+Der Return on Investment (ROI) berechnet sich gem\"a{\ss}:
 \begin{equation}
 \text{ROI} = \frac{\text{Gewinn}}{\text{Investition}} \times 100\%
 \end{equation}
 
-bzw.\ in der ölindustriellen Spezifikation:
+bzw.\ in der \"olindustriellen Spezifikation:
 \begin{equation}
-\text{ROI} = \frac{\text{Ölpreis} \times \text{Fördervolumen} - \text{CAPEX} - \text{OPEX}}{\text{CAPEX}}
+\text{ROI} = \frac{\text{{\"O}lpreis} \times \text{F\"ordervolumen} - \text{CAPEX} - \text{OPEX}_{\text{ges}}}{\text{CAPEX}}
 \end{equation}
-Durch Verwendung dieser Variablen und dem Hintergrund, dass diese jeweils eine unterschiedliche Wahrscheinlichkeitsverteilung annehmen kann, wird der ROI-Wert selbst eine Zufallsvariable. Der ROI ist dadurch keine Zahl mehr, sondern eine Verteilung — und die Form dieser Verteilung enthält die entscheidenden Informationen über das Risiko. Die oben beschriebenen Faktoren lassen sich alternativ auch in das DuPont System umwandeln.
+
+wobei $\text{OPEX}_{\text{ges}} = \text{OPEX}_{\text{j\"ahrlich}} \times T$ das Produkt aus j\"ahrlichen Betriebskosten und der Projektlaufzeit $T$ in Jahren ist.
+
+Durch die Modellierung der Eingabevariablen als Zufallsvariablen wird der ROI selbst zu einer Zufallsvariable. Der ROI ist dadurch keine Zahl mehr, sondern eine Verteilung -- und die Form dieser Verteilung enth\"alt die entscheidenden Informationen \"uber das Risiko.
 
 \subsection{Ex-ante vs.\ Ex-post Steuerung}
 
 Ein zentraler methodischer Punkt unseres Ansatzes betrifft die Unterscheidung zwischen Ex-ante- und Ex-post-Perspektive:
 
-\textbf{Ex-ante (vorab)}: Die Investitionsentscheidung wird auf Basis von Antragsdaten getroffen — Schätzungen von Ingenieuren, geologischen Gutachten und Marktanalysen. Zum Zeitpunkt der Entscheidung existieren keine tatsächlichen Erträge, nur Prognosen.
+\textbf{Ex-ante (vorab)}: Die Investitionsentscheidung wird auf Basis von Antragsdaten getroffen -- Sch\"atzungen von Ingenieuren, geologischen Gutachten und Marktanalysen. Zum Zeitpunkt der Entscheidung existieren keine tats\"achlichen Ertr\"age, nur Prognosen.
 
-\textbf{Ex-post (nachträglich)}: Nach Projektabschluss können die tatsächlichen Kosten und Erträge gemessen werden.
+\textbf{Ex-post (nachtr\"aglich)}: Nach Projektabschluss k\"onnen die tats\"achlichen Kosten und Ertr\"age gemessen werden.
 
-Unser Modell ist rein \textbf{Ex-ante} konzipiert: Es modelliert die Investitionsentscheidung aus der Perspektive des Bewertenden zum Zeitpunkt $t_0$, bevor das Projekt startet. Dies bedeutet insbesondere, dass wir von einer \glqq Fire-and-Forget\grqq{}-Investition ausgehen: Nach Bewilligung des Antrags erfolgen keine weiteren adaptiven Eingriffe (Realoptionen werden nicht modelliert — siehe Limitationen in Abschnitt~\ref{sec:limitationen}).
-
-Diese Ex-ante-Perspektive ist konservativer als ein Realoptionsansatz, produziert aber realistischere Risikoprofile als deterministische Einzelpunktschätzungen.
+Unser Modell ist rein \textbf{Ex-ante} konzipiert: Es modelliert die Investitionsentscheidung aus der Perspektive des Bewertenden zum Zeitpunkt $t_0$, bevor das Projekt startet. Dies bedeutet insbesondere, dass wir von einer \glqq Fire-and-Forget\grqq{}-Investition ausgehen: Nach Bewilligung des Antrags erfolgen keine weiteren adaptiven Eingriffe (Realoptionen werden nicht modelliert -- siehe Limitationen in Abschnitt~\ref{sec:limitationen}).
 
 \subsection{Funktionsweise der Monte-Carlo-Simulation}
 
-Die Monte-Carlo-Simulation (MCS) ist eine rechnergestützte Methode zur numerischen Lösung von Problemen unter Unsicherheit. Ihre Ursprünge liegen in den Arbeiten von \textbf{Stanislaw Ulam} und \textbf{John von Neumann} am Los Alamos National Laboratory in den 1940er Jahren, wo sie zur Modellierung von Neutronendiffusion entwickelt wurde.
+Die Monte-Carlo-Simulation (MCS) ist eine rechnergest\"utzte Methode zur numerischen L\"osung von Problemen unter Unsicherheit. Ihre Urspr\"unge liegen in den Arbeiten von \textbf{Stanislaw Ulam} und \textbf{John von Neumann} am Los Alamos National Laboratory in den 1940er Jahren, wo sie zur Modellierung von Neutronendiffusion entwickelt wurde.
 
-Den Übergang in die betriebswirtschaftliche Investitionsrechnung vollzog \textbf{David B.~Hertz} mit seinem wegweisenden Artikel \textit{``Risk Analysis in Capital Investment''} \cite{hertz1964}. Hertz demonstrierte erstmals, wie probabilistische Simulation die traditionelle Einzelpunktschätzung bei Investitionsentscheidungen ablösen kann.
+Den \"Ubergang in die betriebswirtschaftliche Investitionsrechnung vollzog \textbf{David B.~Hertz} mit seinem wegweisenden Artikel \textit{``Risk Analysis in Capital Investment''} \cite{hertz1964}. Hertz demonstrierte erstmals, wie probabilistische Simulation die traditionelle Einzelpunktsch\"atzung bei Investitionsentscheidungen abl\"osen kann.
 
-In der Erdölindustrie wurde die Methode maßgeblich durch \textbf{Paul D.~Newendorp} etabliert, dessen Standardwerk \textit{``Decision Analysis for Petroleum Exploration''} \cite{newendorp2000} die probabilistische Entscheidungsanalyse für Exploration und Produktion (E\&P) systematisierte und die Dreiecksverteilung als Standardwerkzeug für \textit{Expert Elicitation} begründete. Ergänzend lieferte \textbf{Peter R.~Rose} mit \textit{``Risk Analysis and Management of Petroleum Exploration Ventures''} \cite{rose2001} ein umfassendes Monte-Carlo-basiertes Framework für die Ölexploration.
+In der Erd\"olindustrie wurde die Methode ma{\ss}geblich durch \textbf{Paul D.~Newendorp} etabliert, dessen Standardwerk \textit{``Decision Analysis for Petroleum Exploration''} \cite{newendorp2000} die probabilistische Entscheidungsanalyse f\"ur Exploration und Produktion (E\&P) systematisierte und die Dreiecksverteilung als Standardwerkzeug f\"ur \textit{Expert Elicitation} begr\"undete.
 
-Die MCS basiert auf dem Gesetz der großen Zahlen und folgt einem vierstufigen Prozess:
+Die MCS basiert auf dem Gesetz der gro{\ss}en Zahlen und folgt einem vierstufigen Prozess:
 
 \begin{enumerate}[label=\arabic*., itemsep=4pt]
-  \item \textbf{Definition stochastischer Inputvariablen}: Jede der vier Variablen (CAPEX, OPEX, Fördervolumen, Ölpreis) wird als Zufallsvariable mit einer spezifischen Wahrscheinlichkeitsverteilung modelliert.
-  \item \textbf{Zufälliges Ziehen (Sampling)}: Für jede der $N$ Iterationen werden für alle vier Variablen zufällige Werte aus ihren jeweiligen Verteilungen gezogen.
-  \item \textbf{Berechnung des ROI}: Für jeden Satz gezogener Werte wird der ROI nach der obigen Formel berechnet.
-  \item \textbf{Aggregation}: Nach $N$ Iterationen (typischerweise $N = 10.000$ oder mehr) ergibt sich eine Verteilung von $N$ ROI-Werten, die als Histogramm dargestellt werden kann.
+  \item \textbf{Definition stochastischer Inputvariablen}: Jede der vier Variablen (CAPEX, OPEX, F\"ordervolumen, \"Olpreis) wird als Zufallsvariable mit einer spezifischen Wahrscheinlichkeitsverteilung modelliert.
+  \item \textbf{Zuf\"alliges Ziehen (Sampling)}: F\"ur jede der $N$ Iterationen werden f\"ur alle vier Variablen zuf\"allige Werte aus ihren jeweiligen Verteilungen gezogen.
+  \item \textbf{Berechnung des ROI}: F\"ur jeden Satz gezogener Werte wird der ROI nach der definierten Formel berechnet.
+  \item \textbf{Aggregation}: Nach $N$ Iterationen ergibt sich eine Verteilung von $N$ ROI-Werten, die als Histogramm dargestellt werden kann.
 \end{enumerate}
 
-Der zentrale Erkenntnisgewinn liegt darin, dass die ROI-Verteilung nicht nur einen Erwartungswert liefert, sondern die gesamte Risikobandbreite zeigt — einschließlich der Wahrscheinlichkeit, dass das Projekt Verluste macht ($\text{ROI} < 0$).
+Der zentrale Erkenntnisgewinn liegt darin, dass die ROI-Verteilung nicht nur einen Erwartungswert liefert, sondern die gesamte Risikobandbreite zeigt -- einschlie{\ss}lich der Wahrscheinlichkeit, dass das Projekt Verluste macht ($\text{ROI} < 0$).
 
 % ==================================================================
 % ABSCHNITT 3: METHODIK UND MODELLDESIGN
@@ -193,53 +174,51 @@ Der zentrale Erkenntnisgewinn liegt darin, dass die ROI-Verteilung nicht nur ein
 
 \subsection{Variablenselektion}
 
-Die Vier-Variablen-Struktur unseres Modells wurde bewusst gewählt. In der ölindustriellen Investitionsbewertung dominieren diese vier Größen das Risikoprofil eines Projekts:
+Die Vier-Variablen-Struktur unseres Modells wurde bewusst gew\"ahlt. In der \"olindustriellen Investitionsbewertung dominieren diese vier Gr\"o{\ss}en das Risikoprofil eines Projekts:
 
-\paragraph{1. CAPEX (Capital Expenditure — Investitionskosten)}
+\paragraph{1. CAPEX (Capital Expenditure -- Investitionskosten)}
 \begin{itemize}[itemsep=1pt]
-  \item Umfasst: Bohrkosten, Plattformbau, Pipeline-Infrastruktur, Genehmigungskosten \cite{petrol}
+  \item Umfasst: Bohrkosten, Plattformbau, Pipeline-Infrastruktur, Genehmigungskosten
   \item Charakteristikum: Einmalige, hohe Investition zu Projektbeginn
-  \item Überraschungen: Kostenüberschreitungen von 20–50\% sind branchenüblich
+  \item \"Uberraschungen: Kosten\"uberschreitungen von 20--50\% sind branchen\"ublich \cite{spe35990}
 \end{itemize}
 
-\paragraph{2. OPEX (Operational Expenditure — Betriebskosten)}
+\paragraph{2. OPEX (Operational Expenditure -- Betriebskosten)}
 \begin{itemize}[itemsep=1pt]
-  \item Umfasst: Wartung, Personal, Logistik, Umweltschutzmaßnahmen
-  \item Charakteristikum: Laufende Kosten über die gesamte Förderdauer \cite{petrol}
-  \item Überraschungen: Kann durch technische Probleme oder regulatorische Änderungen stark variieren
+  \item Umfasst: Wartung, Personal, Logistik, Umweltschutzma{\ss}nahmen
+  \item Charakteristikum: Laufende Kosten \"uber die gesamte F\"orderdauer
+  \item \"Uberraschungen: Kann durch technische Probleme oder regulatorische \"Anderungen stark variieren
 \end{itemize}
 
-\paragraph{3. Fördervolumen (Reserven / Produktion)}
+\paragraph{3. F\"ordervolumen (Reserven / Produktion)}
 \begin{itemize}[itemsep=1pt]
-  \item Umfasst: Die tatsächlich förderbare Ölmenge über die Projektlebensdauer
-  \item Charakteristikum: Geologische Unsicherheit — selbst nach Explorationsbohrungen bleiben Unsicherheiten
-  \item Überraschungen: Reserven können um 30–50\% von der Schätzung abweichen
+  \item Umfasst: Die tats\"achlich f\"orderbare \"Olmenge \"uber die Projektlebensdauer
+  \item Charakteristikum: Geologische Unsicherheit -- selbst nach Explorationsbohrungen bleiben signifikante Unsicherheiten
+  \item \"Uberraschungen: Reserven k\"onnen um 30--50\% von der Sch\"atzung abweichen
 \end{itemize}
 
-\paragraph{4. Ölpreis (Marktpreis)}
+\paragraph{4. \"Olpreis (Marktpreis)}
 \begin{itemize}[itemsep=1pt]
-  \item Umfasst: Der durchschnittliche Verkaufspreis pro Barrel über die Projektdauer
+  \item Umfasst: Der durchschnittliche Verkaufspreis pro Barrel \"uber die Projektdauer
   \item Charakteristikum: Exogene Marktvariable, nicht kontrollierbar
-  \item Überraschungen: Historische Volatilität von $\pm$40\% \cite{leonteq2023} innerhalb weniger Jahre 
+  \item \"Uberraschungen: Historische Volatilit\"at von $\pm$40\% \cite{leonteq2023} innerhalb weniger Jahre
 \end{itemize}
 
-Weitere Faktoren (Steuern, Diskontierungssätze, Devisenkurse) spielen ebenfalls eine Rolle, aber die vier genannten Variablen erklären den Großteil der ROI-Varianz und halten das Modell interpretierbar. In einer Erweiterung können weitere Variablen hinzugefügt werden.
+Weitere Faktoren (Steuern, Diskontierungss\"atze, Devisenkurse) spielen ebenfalls eine Rolle, aber die vier genannten Variablen erkl\"aren den Gro{\ss}teil der ROI-Varianz und halten das Modell interpretierbar.
 
 \subsection{Verteilungsannahmen}
 
-Die Wahl der Wahrscheinlichkeitsverteilungen ist der wissenschaftlich kritischste Teil des Modells. Jede Verteilung muss zwei Kriterien erfüllen: (1)~Sie muss die Natur der Unsicherheit sachgerecht abbilden, und (2)~sie muss mit den verfügbaren Daten (Antragsdaten, Expertenschätzungen) kalibrierbar sein.
+Die Wahl der Wahrscheinlichkeitsverteilungen ist der wissenschaftlich kritischste Teil des Modells. Jede Verteilung muss zwei Kriterien erf\"ullen: (1)~Sie muss die Natur der Unsicherheit sachgerecht abbilden, und (2)~sie muss mit den verf\"ugbaren Daten (Antragsdaten, Expertensch\"atzungen) kalibrierbar sein.
 
-\subsubsection{Dreiecksverteilung / PERT-Verteilung (CAPEX, OPEX, Fördervolumen)}
-
-\textbf{Definition der Dreiecksverteilung:}
+\subsubsection{Dreiecksverteilung (CAPEX, OPEX, F\"ordervolumen)}
 
 Eine Zufallsvariable $X$ folgt einer Dreiecksverteilung $\text{Tri}(a, b, c)$, wenn ihre Dichtefunktion durch ein Dreieck mit den Eckpunkten $a$ (Minimum), $b$ (Modus/wahrscheinlichster Wert) und $c$ (Maximum) gegeben ist.
 
 Dichte:
 \begin{equation}
 f(x) = \begin{cases}
-  \dfrac{2(x-a)}{(b-a)(c-a)} & \text{für } a \leq x \leq b \\[8pt]
-  \dfrac{2(c-x)}{(c-b)(c-a)} & \text{für } b < x \leq c \\[4pt]
+  \dfrac{2(x-a)}{(b-a)(c-a)} & \text{f\"ur } a \leq x \leq b \\[8pt]
+  \dfrac{2(c-x)}{(c-b)(c-a)} & \text{f\"ur } b < x \leq c \\[4pt]
   0 & \text{sonst}
 \end{cases}
 \end{equation}
@@ -254,31 +233,28 @@ Varianz:
 \text{Var}[X] = \frac{a^2 + b^2 + c^2 - ab - ac - bc}{18}
 \end{equation}
 
-\textbf{Warum Dreiecks-/PERT-Verteilung?}
-
-Die Begründung ist dreifach:
+\textbf{Warum Dreiecksverteilung?}
 
 \begin{enumerate}[label=\arabic*., itemsep=4pt]
-  \item \textbf{Datenrealität}: In der Praxis werden Investitionsanträge selten mit vollständigen historischen Datensätzen versehen. Ingenieure und Geologen liefern typischerweise drei Werte: einen Worst-Case (Pessimist = Minimum), einen Best-Case (Optimist = Maximum) und einen Most-Likely-Case (Modus = wahrscheinlichster Wert). Genau diese drei Parameter definieren die Dreiecksverteilung \cite{newendorp2000}.
-  \item \textbf{Wissenschaftliche Begründung}: Die Dreiecksverteilung erzwingt keine Symmetrie (wie die Normalverteilung) und hat keinen unendlichen Support (im Gegensatz zur Normalverteilung, die negative Werte erlaubt, was bei CAPEX und OPEX unplausibel ist). Sie ist die minimale Informationsverteilung, die mit den drei gegebenen Schätzwerten konsistent ist.
-  \item \textbf{PERT-Variante}: Die PERT-Verteilung (\textit{Program Evaluation and Review Technique}) ist eine Abwandlung, die die Extremwerte weniger Gewicht verleiht und eine glattere Glockenform erzeugt. Sie eignet sich besonders, wenn Experten eine Konzentration um den Modus erwarten, aber Unsicherheit über die Extremwerte besteht.
-  \item \textbf{Industriestandard}: Die Society of Petroleum Engineers (SPE) empfiehlt in SPE~35990 \textit{``Probabilistic Drilling-Cost Estimating''} \cite{spe35990} explizit die Dreiecksverteilung für die probabilistische Schätzung von Bohrkosten und CAPEX-Komponenten, wenn keine ausreichende historische Datenbasis für eine parametrische Verteilungsanpassung vorliegt.
+  \item \textbf{Datenrealit\"at}: In der Praxis werden Investitionsantr\"age selten mit vollst\"andigen historischen Datens\"atzen versehen. Ingenieure und Geologen liefern typischerweise drei Werte: einen Worst-Case (Minimum), einen Best-Case (Maximum) und einen Most-Likely-Case (Modus). Genau diese drei Parameter definieren die Dreiecksverteilung \cite{newendorp2000}.
+  \item \textbf{Wissenschaftliche Begr\"undung}: Die Dreiecksverteilung erzwingt keine Symmetrie und hat einen endlichen Support, was negative Werte bei Kosten ausschlie{\ss}t. Sie ist die minimale Informationsverteilung, die mit den drei gegebenen Sch\"atzwerten konsistent ist.
+  \item \textbf{Industriestandard}: Die Society of Petroleum Engineers (SPE) empfiehlt in SPE~35990 \cite{spe35990} explizit die Dreiecksverteilung f\"ur die probabilistische Sch\"atzung von Bohrkosten und CAPEX-Komponenten, wenn keine ausreichende historische Datenbasis f\"ur eine parametrische Verteilungsanpassung vorliegt.
 \end{enumerate}
 
 \textbf{Praktische Kalibrierung:}
 \begin{itemize}[itemsep=1pt]
-  \item CAPEX: $\text{Tri}(500\text{M},\; 750\text{M},\; 1{,}2\text{B})$ — typische Bandbreite für Offshore-Projekte
-  \item OPEX: $\text{Tri}(80\text{M},\; 120\text{M},\; 200\text{M})$ — laufende Kosten pro Jahr
-  \item Fördervolumen: $\text{Tri}(50\text{M},\; 150\text{M},\; 300\text{M})$ — Barrel über Projektlebensdauer
-   \item Ölpreis $\text{Tri}(20\text{M},\; 75\text{M},\; 110\text{M})$ — Ölpreisschwankung durch Analyse monatlicher Preisschwankungen der Jahre 2020 - 2025 \cite{opec2026}
+  \item CAPEX: $\text{Tri}(500\text{M},\; 750\text{M},\; 1{,}2\text{B})$ -- typische Bandbreite f\"ur Offshore-Projekte
+  \item OPEX (j\"ahrlich): $\text{Tri}(80\text{M},\; 120\text{M},\; 200\text{M})$ -- laufende Kosten pro Jahr
+  \item F\"ordervolumen: $\text{Tri}(50\text{M},\; 150\text{M},\; 300\text{M})$ -- Barrel \"uber Projektlebensdauer
+  \item Projektlaufzeit: $T = 10$ Jahre
+  \item OPEX gesamt: $\text{OPEX}_{\text{ges}} = \text{OPEX}_{\text{j\"ahrlich}} \times T$
 \end{itemize}
 
+\subsubsection{Lognormalverteilung (\"Olpreis)}
 
-\subsubsection{Lognormalverteilung (Ölpreis)}
+Eine Zufallsvariable $X$ folgt einer Lognormalverteilung $\text{LogN}(\mu, \sigma^2)$, wenn $\ln(X) \sim \mathcal{N}(\mu, \sigma^2)$.
 
-\textbf{Definition:}
-
-Eine Zufallsvariable $X$ folgt einer Lognormalverteilung $\text{LogN}(\mu, \sigma^2)$, wenn $\ln(X) \sim \mathcal{N}(\mu, \sigma^2)$. Dichte:
+Dichte:
 \begin{equation}
 f(x) = \frac{1}{x \cdot \sigma \cdot \sqrt{2\pi}} \cdot \exp\!\left(-\frac{(\ln(x) - \mu)^2}{2\sigma^2}\right), \quad x > 0
 \end{equation}
@@ -293,38 +269,39 @@ Varianz:
 \text{Var}[X] = \bigl(\exp(\sigma^2) - 1\bigr) \cdot \exp(2\mu + \sigma^2)
 \end{equation}
 
-\textbf{Warum Lognormalverteilung für den Ölpreis?}
+\textbf{Warum Lognormalverteilung f\"ur den \"Olpreis?}
 
 \begin{enumerate}[label=\arabic*., itemsep=4pt]
-  \item \textbf{Nicht-Negativität}: Rohstoffpreise können nicht negativ sein (die Ausnahme von 2020 — negative Futures — ist ein Spezialfall des Lagerkostenphänomens und wird in unserem Modell ausgeschlossen). Die Lognormalverteilung hat natürlicherweise $x > 0$.
-  \item \textbf{Rechtsschiefe}: Historische Ölpreise zeigen eine deutliche Rechtsschiefe — sie können theoretisch beliebig hoch ansteigen, fallen aber nicht unter null. Die Lognormalverteilung bildet diese Asymmetrie ab.
-  \item \textbf{Finanzmathematischer Standard}: Die Lognormalverteilung ist der etablierte Standard in der Finanzmathematik zur Modellierung von Rohstoff- und Aktienpreisen. Das Black-Scholes-Modell setzt Lognormalität voraus. In der Petroleumökonomie modellierten \textbf{Brennan und Schwartz} \cite{brennan1985} erstmals Rohstoffinvestitionen mittels geometrischer Brownscher Bewegung (GBM), bei der der Preis zu jedem festen Zeitpunkt $T$ lognormalverteilt ist. Die Gültigkeit dieser Annahme für Ölpreise wurde von \textbf{Al-Harthy} \cite{alharthy2005} empirisch untersucht und als sinnvolle Erstapproximation bestätigt.
-  \item \textbf{Multiplikatives Wachstum}: Ölpreisänderungen sind proportional (ein Preis von \$100, der um 10\% steigt, wird \$110; nicht ein Preis von \$100 plus \$10). Proportionale Änderungen führen mathematisch zu Lognormalverteilungen.
+  \item \textbf{Nicht-Negativit\"at}: Die Lognormalverteilung hat nat\"urlich $x > 0$.
+  \item \textbf{Rechtsschiefe}: Historische \"Olpreise zeigen eine deutliche Rechtsschiefe -- sie k\"onnen theoretisch beliebig hoch ansteigen, fallen aber nicht unter null.
+  \item \textbf{Finanzmathematischer Standard}: Die Lognormalverteilung ist der etablierte Standard in der Finanzmathematik zur Modellierung von Rohstoffpreisen. Brennan und Schwartz \cite{brennan1985} modellierten erstmals Rohstoffinvestitionen mittels geometrischer Brownscher Bewegung, bei der der Preis zu jedem festen Zeitpunkt $T$ lognormalverteilt ist.
+  \item \textbf{Multiplikatives Wachstum}: \"Olpreis\"anderungen sind proportional. Proportionale \"Anderungen \"uber die Zeit f\"uhren mathematisch zu Lognormalverteilungen.
 \end{enumerate}
 
 \textbf{Kalibrierung aus Marktdaten:}
 \begin{itemize}[itemsep=1pt]
-  \item Historischer mittlerer Ölpreis: ${\sim}\$70$/Barrel
-  \item Historische Volatilität: $\sigma \approx 0{,}3$–$0{,}4$
+  \item Historischer mittlerer \"Olpreis: ${\sim}\$70$/Barrel
+  \item Historische Volatilit\"at: $\sigma \approx 0{,}35$
   \item Parameter: $\mu = \ln(70) - \sigma^2/2$, \; $\sigma = 0{,}35$
 \end{itemize}
 
 \subsection{Mathematisches Modell}
 
-Das ROI-Modell berechnet sich für jeden Simulationsschritt $i$ ($i = 1, \dots, N$) wie folgt:
+Das ROI-Modell berechnet sich f\"ur jeden Simulationsschritt $i$ ($i = 1, \dots, N$) wie folgt:
 
 \textbf{Gegeben:}
 \begin{align}
-  \text{CAPEX}_i &\sim \text{Tri}(a_c,\, b_c,\, c_c)  & &\text{— Investitionskosten} \\
-  \text{OPEX}_i  &\sim \text{Tri}(a_o,\, b_o,\, c_o)  & &\text{— Betriebskosten} \\
-  V_i            &\sim \text{Tri}(a_v,\, b_v,\, c_v)  & &\text{— Fördervolumen (Barrel)} \\
-  P_i            &\sim \text{LogN}(\mu_p,\, \sigma_p^2) & &\text{— Ölpreis (\$/Barrel)}
+  \text{CAPEX}_i         &\sim \text{Tri}(a_c,\, b_c,\, c_c)   & &\text{-- Investitionskosten} \\
+  \text{OPEX}_{\text{annual},i}  &\sim \text{Tri}(a_o,\, b_o,\, c_o) & &\text{-- j\"ahrliche Betriebskosten} \\
+  \text{OPEX}_{\text{ges},i}     &= \text{OPEX}_{\text{annual},i} \times T & &\text{-- Betriebskosten gesamt} \\
+  V_i                    &\sim \text{Tri}(a_v,\, b_v,\, c_v)   & &\text{-- F\"ordervolumen (Barrel)} \\
+  P_i                    &\sim \text{LogN}(\mu_p,\, \sigma_p^2) & &\text{-- \"Olpreis (\$/Barrel)}
 \end{align}
 
 \textbf{Berechnung:}
 \begin{align}
   \text{Umsatz}_i       &= P_i \times V_i \\
-  \text{Gesamtkosten}_i &= \text{CAPEX}_i + \text{OPEX}_i \\
+  \text{Gesamtkosten}_i &= \text{CAPEX}_i + \text{OPEX}_{\text{ges},i} \\
   \text{Gewinn}_i       &= \text{Umsatz}_i - \text{Gesamtkosten}_i \\
   \text{ROI}_i          &= \frac{\text{Gewinn}_i}{\text{CAPEX}_i}
 \end{align}
@@ -332,11 +309,11 @@ Das ROI-Modell berechnet sich für jeden Simulationsschritt $i$ ($i = 1, \dots, 
 Nach $N$ Iterationen ergibt sich die empirische ROI-Verteilung $\{\text{ROI}_1, \text{ROI}_2, \dots, \text{ROI}_N\}$, die ausgewertet wird durch:
 
 \begin{itemize}[itemsep=2pt]
-  \item \textbf{Erwartungswert (Mean ROI)}: $\bar{E} = \frac{1}{N}\sum_{i=1}^{N} \text{ROI}_i$
-  \item \textbf{Standardabweichung (Volatilität)}: $\hat{\sigma} = \sqrt{\frac{1}{N}\sum_{i=1}^{N}(\text{ROI}_i - \bar{E})^2}$
+  \item \textbf{Erwartungswert (Mean ROI)}: $\displaystyle \bar{R} = \frac{1}{N}\sum_{i=1}^{N} \text{ROI}_i$
+  \item \textbf{Standardabweichung (Volatilit\"at)}: $\displaystyle \hat{\sigma} = \sqrt{\frac{1}{N-1}\sum_{i=1}^{N}(\text{ROI}_i - \bar{R})^2}$
   \item \textbf{Value at Risk (VaR)}: $P(\text{ROI} \leq \text{VaR}_\alpha) = \alpha$, typischerweise $\alpha = 5\%$
-  \item \textbf{Probability of Loss}: $P(\text{ROI} < 0) = $ Anteil der Iterationen mit negativem ROI
-  \item \textbf{Median (P50)}: Der ROI-Wert, bei dem 50\% der Simulationen darüber und 50\% darunter liegen
+  \item \textbf{Probability of Loss}: $P(\text{ROI} < 0)$ -- Anteil der Iterationen mit negativem ROI
+  \item \textbf{Median (P50)}: Der ROI-Wert, bei dem 50\% der Simulationen dar\"uber und 50\% darunter liegen
 \end{itemize}
 
 \subsection{Simulationsparameter}
@@ -345,16 +322,20 @@ Nach $N$ Iterationen ergibt sich die empirische ROI-Verteilung $\{\text{ROI}_1, 
 \centering
 \begin{tabular}{lll}
 \toprule
-\textbf{Parameter} & \textbf{Standardwert} & \textbf{Begründung} \\
+\textbf{Parameter} & \textbf{Standardwert} & \textbf{Begr\"undung} \\
 \midrule
-Anzahl Iterationen ($N$) & 10.000 & Ausreichend für stabile Konvergenz \\
-Zufallszahlengenerator & Mersenne Twister & Reproduzierbar (nicht kryptografisch) \\
-Korrelationen & Keine (unabhängig) & Basis-Modell (Erweiterung möglich) \\
-Bootstrap-Konfidenz & 95\% & Standard in der Praxis \\
+Anzahl Iterationen ($N$) & 10.000 & Standardkonvergenz \\
+Zufallszahlengenerator & Mersenne Twister & Reproduzierbar (Seed 12345) \\
+Korrelationen & Keine (unabh\"angig) & Basis-Modell \\
+Projektlaufzeit $T$ & 10 Jahre & Typische Offshore-Projektdauer \\
 \bottomrule
 \end{tabular}
-\caption{Simulationsparameter und ihre Begründung}
+\caption{Simulationsparameter und ihre Begr\"undung}
 \end{table}
+
+\subsection{Hinweis zur Modellkalibrierung}
+
+Die in diesem Paper verwendeten Parameterwerte sind als illustrative Beispielwerte zu verstehen. Bei der konkreten Kalibrierung des Modells zeigte sich, dass die aktuellen Parametersch\"atzungen zu einem extrem hohen erwarteten ROI f\"uhren. Dies liegt daran, dass die j\"ahrlichen OPEX-Sch\"atzungen im Verh\"altnis zum Umsatz (\"Olpreis $\times$ F\"ordervolumen) sehr niedrig ausfallen. In der Praxis sind die Betriebskosten bei Offshore-Projekten deutlich h\"oher, und die hier verwendeten Werte dienen prim\"ar der Demonstration der Methodik. F\"ur eine reale Anwendung m\"ussen die Verteilungsparameter durch umfassende historische Datenanalyse und Expertenvalidierung kalibriert werden.
 
 % ==================================================================
 % ABSCHNITT 4: SIMULATION UND ERGEBNISSE
@@ -363,7 +344,7 @@ Bootstrap-Konfidenz & 95\% & Standard in der Praxis \\
 
 \subsection{Beschreibung des Datensatzes}
 
-Für die vorliegende Analyse verwenden wir einen synthetischen Datensatz, der auf typischen Antragswerten für ein mittleres Offshore-Ölförderprojekt basiert. Die Parameter wurden so gewählt, dass sie ein realistisches Profil der ökonomischen Unsicherheit abbilden:
+F\"ur die vorliegende Analyse verwenden wir einen synthetischen Datensatz, der auf typischen Antragswerten f\"ur ein mittleres Offshore-{\"O}lf\"orderprojekt basiert.
 
 \paragraph{CAPEX-Parameter (Dreiecksverteilung):}
 \begin{itemize}[itemsep=1pt]
@@ -372,37 +353,38 @@ Für die vorliegende Analyse verwenden wir einen synthetischen Datensatz, der au
   \item Maximum (Best Case): \$1.200M
 \end{itemize}
 
-\paragraph{OPEX-Parameter (Dreiecksverteilung):}
+\paragraph{OPEX-Parameter (Dreiecksverteilung, j\"ahrlich):}
 \begin{itemize}[itemsep=1pt]
   \item Minimum: \$80M/Jahr
   \item Modus: \$120M/Jahr
   \item Maximum: \$200M/Jahr
+  \item Projektlaufzeit: $T = 10$ Jahre $\rightarrow$ Gesamt-OPEX: $\text{Tri}(800\text{M},\; 1{,}2\text{B},\; 2{,}0\text{B})$
 \end{itemize}
 
-\paragraph{Fördervolumen-Parameter (Dreiecksverteilung):}
+\paragraph{F\"ordervolumen-Parameter (Dreiecksverteilung):}
 \begin{itemize}[itemsep=1pt]
   \item Minimum: 50M Barrel
   \item Modus: 150M Barrel
   \item Maximum: 300M Barrel
 \end{itemize}
 
-\paragraph{Ölpreis-Parameter (Lognormalverteilung):}
+\paragraph{{\"O}lpreis-Parameter (Lognormalverteilung):}
 \begin{itemize}[itemsep=1pt]
   \item Mittelwert: ${\sim}\$70$/Barrel
-  \item Standardabweichung: ${\sim}\$25$/Barrel
-  \item (Entspricht LogN-Parameter $\mu \approx 4{,}20$, $\sigma \approx 0{,}35$)
+  \item Volatilit\"at: $\sigma \approx 0{,}35$
+  \item Parameter: $\mu \approx 4{,}20$, $\sigma \approx 0{,}35$
 \end{itemize}
 
-\subsection{Durchführung der Simulation}
+\subsection{Durchf\"uhrung der Simulation}
 
-Die Monte-Carlo-Simulation wurde mit $N = 10.000$ Iterationen durchgeführt. In jedem Schritt wurden:
+Die Monte-Carlo-Simulation wurde mit $N = 10.000$ Iterationen durchgef\"uhrt (Seed: 12345, Mersenne Twister). In jedem Schritt wurden:
 \begin{enumerate}[label=\arabic*., itemsep=2pt]
   \item Vier Zufallszahlen aus den jeweiligen Verteilungen gezogen
   \item Der ROI nach der in Abschnitt~3.3 definierten Formel berechnet
-  \item Das Ergebnis der ROI-Stichprobe hinzugefügt
+  \item Das Ergebnis der ROI-Stichprobe hinzugef\"ugt
 \end{enumerate}
 
-Die Simulation wurde mit einem festen Seed (Mersenne Twister) durchgeführt, um Reproduzierbarkeit zu gewährleisten. Die Konvergenz wurde durch einen Split-Halftest verifiziert: Die ROI-Verteilung der ersten 5.000 Iterationen weicht von der der zweiten 5.000 Iterationen um weniger als 2\% im Erwartungswert ab.
+Die Konvergenz wurde durch einen Split-Halftest verifiziert: Die ROI-Verteilung der ersten 5.000 Iterationen weicht von der der zweiten 5.000 Iterationen um weniger als 2\% im Erwartungswert ab.
 
 \subsection{Ergebnisse}
 
@@ -410,78 +392,72 @@ Die Simulation wurde mit einem festen Seed (Mersenne Twister) durchgeführt, um 
 
 \begin{table}[H]
 \centering
-\begin{tabular}{llp{6.5cm}}
+\begin{tabular}{ll}
 \toprule
-\textbf{Kennzahl} & \textbf{Wert} & \textbf{Interpretation} \\
+\textbf{Kennzahl} & \textbf{Wert} \\
 \midrule
-Erwartungswert (Mean ROI)      & ${\sim}45\%$      & Mittlere erwartete Rendite \\
-Median (P50)                   & ${\sim}38\%$      & 50\% der Simulationen erreichen mind.\ diesen ROI \\
-Standardabweichung              & ${\sim}25\%$      & Hohe Volatilität — breite Streuung \\
-Value at Risk (5\%)             & ${\sim}{-}15\%$   & Im schlechtesten 5\%-Szenario Verlust \\
-Probability of Loss ($P(\text{ROI}<0)$) & ${\sim}12\%$ & Etwa jedes 8.\ Szenario ist verlustbringend \\
-Maximum ROI                    & ${\sim}120\%$     & Best-Case-Szenario \\
-Minimum ROI                    & ${\sim}{-}40\%$   & Worst-Case-Szenario \\
+Erwartungswert (Mean ROI)      & $1{.}208\%$ \\
+Median (P50)                   & $1{.}052\%$ \\
+Standardabweichung              & $759\%$ \\
+Value at Risk (5\%)             & $284\%$ \\
+Probability of Loss ($P(\text{ROI}<0)$) & $0{,}1\%$ \\
+Maximum ROI                    & $6{.}466\%$ \\
+Minimum ROI                    & $-140\%$ \\
 \bottomrule
 \end{tabular}
-\caption{Kennzahlen der ROI-Verteilung}
+\caption{Kennzahlen der ROI-Verteilung der Monte-Carlo-Simulation ($N = 10.000$)}
 \end{table}
 
-\textbf{Interpretation des Histogramms:}
+Die extrem hohen ROI-Werte sind auf die Kalibrierung der Eingabeparameter zur\"uckzuf\"uhren: Bei einem mittleren \"Olpreis von \$70/Barrel und einem mittleren F\"ordervolumen von 150M Barrel ergibt sich ein Umsatz von \$10,5 Mrd., dem Gesamtkosten von lediglich ca.\ \$1,95 Mrd.\ (CAPEX \$750M + OPEX \$1,2 Mrd.) gegen\"uberstehen. Die sich daraus ergebende Gewinnmarge ist unrealistisch hoch. Dies unterstreicht die in Abschnitt~3.5 diskutierte Notwendigkeit einer sorgf\"altigen Kalibrierung.
 
-% Platzhalter für Histogramm-Grafik
+% Platzhalter f\"ur Histogramm-Grafik
 \begin{figure}[H]
 \centering
 \fbox{\parbox{0.85\textwidth}{\centering\vspace{3cm}
-\textit{Platzhalter: ROI-Histogramm} \\[4pt]
-\texttt{figures/roi\_distribution.pdf} — hier einfügen
+\textit{Hinweis: ROI-Histogramm} \\[4pt]
+\texttt{figures/roi\_distribution.pdf} -- aus Simulationsdaten generieren
 \vspace{3cm}}}
 \caption{ROI-Histogramm der Monte-Carlo-Simulation ($N = 10.000$)}
 \end{figure}
 
-Das ROI-Histogramm zeigt eine rechtsschiefe Verteilung mit den folgenden Eigenschaften:
-\begin{itemize}[itemsep=2pt]
-  \item Der Modus (häufigster Wert) liegt bei ca.\ 35–40\%, also deutlich unter dem arithmetischen Mittelwert von 45\%
-  \item Die rechte Schwanzverteilung ist lang, getrieben durch die Kombination aus hohem Ölpreis und hohem Fördervolumen
-  \item Etwa 12\% der Fläche liegt links von ROI $= 0$ $\rightarrow$ das Verlustrisiko ist signifikant
-  \item Der P50-Wert (Median) von 38\% ist der robustere Kennwert gegenüber dem Mean (45\%), der durch Extremwerte nach oben gezogen wird
-\end{itemize}
+Die ROI-Verteilung zeigt eine starke Rechtsschiefe: Der Median liegt unter dem arithmetischen Mittel, und die Wahrscheinlichkeit eines Verlustes ist mit $0{,}1\%$ sehr gering.
 
-\subsection{Sensitivitätsanalyse}
+\subsection{Sensitivit\"atsanalyse}
 
-Um zu verstehen, welche Inputvariable den größten Einfluss auf die ROI-Streuung hat, wurde eine korrelationsbasierte Sensitivitätsanalyse durchgeführt \cite{spe52949}. Für jede Input-Variable $X_k$ wird der Pearson-Korrelationskoeffizient $r_k$ mit dem ROI berechnet:
+Um zu verstehen, welche Inputvariable den gr\"o{\ss}ten Einfluss auf die ROI-Streuung hat, wurde eine korrelationsbasierte Sensitivit\"atsanalyse durchgef\"uhrt \cite{spe52949}. F\"ur jede Input-Variable $X_k$ wird der Pearson-Korrelationskoeffizient $r_k$ mit dem ROI berechnet:
 
 \begin{equation}
 r(X, Y) = \frac{\sum_{i=1}^{N}(x_i - \bar{x})(y_i - \bar{y})}{\sqrt{\sum_{i=1}^{N}(x_i - \bar{x})^2 \cdot \sum_{i=1}^{N}(y_i - \bar{y})^2}}
 \end{equation}
 
-Das Bestimmtheitsmaß $R^2_k = r_k^2$ gibt den Anteil der ROI-Varianz an, der durch die jeweilige Variable erklärt wird. Die Normierung $R^2_k / \sum_j R^2_j \times 100\%$ liefert den relativen Einfluss jeder Variable, dargestellt als \textbf{Tornado-Diagramm} — ein Standardwerkzeug der Risikomanagement-Praxis:
+Das Bestimmtheitsma{\ss} $R^2_k = r_k^2$ gibt den Anteil der ROI-Varianz an, der durch die jeweilige Variable erkl\"art wird.
 
 \begin{table}[H]
 \centering
-\begin{tabular}{llp{5.5cm}}
+\begin{tabular}{llc}
 \toprule
-\textbf{Variable} & \textbf{Einfluss auf ROI-Varianz} & \textbf{Erklärung} \\
+\textbf{Variable} & \textbf{Einfluss auf ROI-Varianz} & \textbf{Pearson } $r$ \\
 \midrule
-Ölpreis        & ${\sim}55\%$ & Größter Treiber — exogene Unsicherheit \\
-Fördervolumen  & ${\sim}25\%$ & Geologisches Risiko \\
-CAPEX          & ${\sim}12\%$ & Investitionsüberschreitungsrisiko \\
-OPEX           & ${\sim}8\%$  & Relativ stabilere Kostenstruktur \\
+{\"O}lpreis        & $51{,}6\%$ & $+0{,}69$ \\
+F\"ordervolumen  & $39{,}2\%$ & $+0{,}60$ \\
+CAPEX          & $9{,}1\%$  & $-0{,}29$ \\
+OPEX           & $0{,}2\%$  & $-0{,}04$ \\
 \bottomrule
 \end{tabular}
-\caption{Sensitivitätsanalyse — Einfluss der Inputvariablen auf die ROI-Varianz}
+\caption{Sensitivit\"atsanalyse -- Einfluss der Inputvariablen auf die ROI-Varianz}
 \end{table}
 
-% Platzhalter für Tornado-Diagramm
+% Platzhalter f\"ur Tornado-Diagramm
 \begin{figure}[H]
 \centering
 \fbox{\parbox{0.85\textwidth}{\centering\vspace{3cm}
-\textit{Platzhalter: Tornado-Diagramm} \\[4pt]
-\texttt{figures/sensitivity\_tornado.pdf} — hier einfügen
+\textit{Hinweis: Tornado-Diagramm} \\[4pt]
+\texttt{figures/sensitivity\_tornado.pdf} -- aus Simulationsdaten generieren
 \vspace{3cm}}}
-\caption{Tornado-Diagramm der Sensitivitätsanalyse}
+\caption{Tornado-Diagramm der Sensitivit\"atsanalyse}
 \end{figure}
 
-Die Sensitivitätsanalyse zeigt: Der Ölpreis dominiert das Risikoprofil. Dies ist nicht überraschend — die Lognormalverteilung hat eine höhere intrinsische Varianz als die Dreiecksverteilungen, und der Ölpreis wirkt multiplikativ auf den Umsatz.
+Die Sensitivit\"atsanalyse zeigt: \"Olpreis und F\"ordervolumen dominieren das Risikoprofil. Der geringe Einfluss der OPEX ist darauf zur\"uckzuf\"uhren, dass die j\"ahrlichen Betriebskosten im Verh\"altnis zum Umsatz sehr niedrig sind. Bei einer realistischeren Kalibrierung w\"are der OPEX-Einfluss deutlich h\"oher.
 
 % ==================================================================
 % ABSCHNITT 5: DISKUSSION UND LIMITATIONEN
@@ -489,43 +465,43 @@ Die Sensitivitätsanalyse zeigt: Der Ölpreis dominiert das Risikoprofil. Dies i
 \section{Diskussion und Limitationen}
 \label{sec:limitationen}
 
-\subsection{Zusammenhang zwischen den Eingabedaten und der Ergebnisqualität}
+\subsection{Zusammenhang zwischen den Eingabedaten und der Ergebnisqualit\"at}
 
-Die Qualität der Monte-Carlo-Simulation steht und fällt mit der Qualität der Inputdaten. Wenn die Dreiecksverteilungsparameter (Min, Modus, Max) systematisch verzerrt sind — z.\,B.\ durch \textit{Optimism Bias} (Überbetonung des Best-Case) oder \textit{Anchoring} (zu enge Bandbreite) —, dann reflektiert die Output-Verteilung nicht die wahre Unsicherheit, sondern die Verzerrung der Schätzer. Dies wird auch als "Garbage in, Garbage out" bezeichnet.
+Die Qualit\"at der Monte-Carlo-Simulation steht und f\"allt mit der Qualit\"at der Inputdaten. Wenn die Dreiecksverteilungsparameter systematisch verzerrt sind -- z.\,B.\ durch \textit{Optimism Bias} oder \textit{Anchoring} --, dann reflektiert die Output-Verteilung nicht die wahre Unsicherheit, sondern die Verzerrung der Sch\"atzer. Dies wird auch als \glqq Garbage in, Garbage out\grqq{}~bezeichnet.
 
-\textbf{Empfehlung}: Wo möglich, sollten historische Daten zur Validierung der Experten-Schätzungen herangezogen werden. Ein Kalibriertest vergleicht die Vorhersagen vergangener Anträge mit den tatsächlichen Ergebnissen und identifiziert systematische Überschätzungen oder Unterschätzungen.
+\textbf{Empfehlung}: Wo m\"oglich, sollten historische Daten zur Validierung der Experten-Sch\"atzungen herangezogen werden. Ein Kalibriertest vergleicht die Vorhersagen vergangener Antr\"age mit den tats\"achlichen Ergebnissen und identifiziert systematische \"Ubersch\"atzungen oder Untersch\"atzungen.
 
-\subsection{Unabhängigkeitsannahme}
+\subsection{Unabh\"angigkeitsannahme}
 
-Unser Basis-Modell geht davon aus, dass die vier Inputvariablen unabhängig sind. In der Realität bestehen jedoch Korrelationen:
-
-\begin{itemize}[itemsep=2pt]
-  \item \textbf{Ölpreis und OPEX}: Bei hohen Ölpreisen steigen typischerweise auch die Betriebskosten (inflationärer Effekt, höhere Servicekosten)
-  \item \textbf{CAPEX und Fördervolumen}: Größere Projekte (höheres CAPEX) ermöglichen oft höhere Förderung, aber auch komplexere Risiken
-  \item \textbf{Ölpreis und CAPEX}: Hochpreisphasen treiben die Infrastrukturkosten (Bohrschiffe, Plattformen) nach oben
-\end{itemize}
-
-\textbf{Erweiterungsmöglichkeit}: Kopula-basierte (\textit{Copula}) Abhängigkeitsstrukturen können Korrelationen zwischen den Inputvariablen modellieren, ohne die marginalen Verteilungen zu verändern.
-
-\subsection{Fehlende Ex-post-Einflüsse und Realoptionen}
-
-Wie in Abschnitt~2.2 dargelegt, modellieren wir eine \glqq Fire-and-Forget\grqq{}-Investition. In der Realität haben Manager die Möglichkeit:
+Unser Basis-Modell geht davon aus, dass die vier Inputvariablen unabh\"angig sind. In der Realit\"at bestehen jedoch Korrelationen:
 
 \begin{itemize}[itemsep=2pt]
-  \item \textbf{Abbruchoption (\textit{Abandon Option})}: Das Projekt bei drohendem Verlust vorzeitig zu stoppen
-  \item \textbf{Erweiterungsoption (\textit{Expand Option})}: Bei überaus günstiger Entwicklung zusätzlich zu investieren
-  \item \textbf{Verzögerungsoption (\textit{Delay Option})}: Den Investitionszeitpunkt zu verschieben, bis mehr Informationen vorliegen
+  \item \textbf{{\"O}lpreis und OPEX}: Bei hohen \"Olpreisen steigen typischerweise auch die Betriebskosten.
+  \item \textbf{CAPEX und F\"ordervolumen}: Gr\"o{\ss}ere Projekte erm\"oglichen oft h\"ohere F\"orderung.
+  \item \textbf{{\"O}lpreis und CAPEX}: Hochpreisphasen treiben die Infrastrukturkosten nach oben.
 \end{itemize}
 
-Diese Realoptionen haben einen positiven Wert, der in unserem Modell nicht berücksichtigt wird. Unser ROI-Modell stellt somit eine \textbf{konservative Untergrenze} des Projektwerts dar.
+\textbf{Erweiterungsm\"oglichkeit}: Kopula-basierte Abh\"angigkeitsstrukturen k\"onnen Korrelationen zwischen den Inputvariablen modellieren, ohne die marginalen Verteilungen zu ver\"andern.
+
+\subsection{Fehlende Ex-post-Einfl\"usse und Realoptionen}
+
+Wie in Abschnitt~2.2 dargelegt, modellieren wir eine \glqq Fire-and-Forget\grqq{}-Investition. In der Realit\"at haben Manager die M\"oglichkeit:
+
+\begin{itemize}[itemsep=2pt]
+  \item \textbf{Abbruchoption}: Das Projekt bei drohendem Verlust vorzeitig zu stoppen.
+  \item \textbf{Erweiterungsoption}: Bei \"uberaus g\"unstiger Entwicklung zus\"atzlich zu investieren.
+  \item \textbf{Verz\"ogerungsoption}: Den Investitionszeitpunkt zu verschieben.
+\end{itemize}
+
+Diese Realoptionen haben einen positiven Wert, der in unserem Modell nicht ber\"ucksichtigt wird \cite{brennan1985}.
 
 \subsection{Statische Parameter}
 
-Das Modell verwendet feste Verteilungsparameter. In der Praxis könnten sich diese Parameter über die Projektdauer ändern — insbesondere der Ölpreis zeigt empirisch ein \textit{Mean-Reverting}-Verhalten, bei dem Preise langfristig zu einem Gleichgewichtsniveau zurückkehren. \textbf{Al-Harthy} \cite{alharthy2007} vergleicht verschiedene stochastische Ölpreismodelle (GBM, Mean-Reverting, Jump-Diffusion) und zeigt, dass die Modellwahl signifikanten Einfluss auf die Investitionsbewertung hat. Ein dynamisches Modell mit zeitabhängigen Parametern und Mean-Reversion wäre eine sinnvolle Erweiterung.
+Das Modell verwendet feste Verteilungsparameter. In der Praxis k\"onnten sich diese Parameter \"uber die Projektdauer \"andern -- insbesondere der \"Olpreis zeigt empirisch ein \textit{Mean-Reverting}-Verhalten. Al-Harthy \cite{alharthy2007} vergleicht verschiedene stochastische \"Olpreismodelle und zeigt, dass die Modellwahl signifikanten Einfluss auf die Investitionsbewertung hat.
 
 \subsection{Single-Project-Perspektive}
 
-Die Simulation betrachtet ein einzelnes Projekt isoliert. In einem Portfolio-Kontext können Diversifikationseffekte auftreten: Die Korrelation zwischen verschiedenen Projekten reduziert das Gesamtrisiko des Portfolios. Eine Portfolioperspektive wäre ein nächster logischer Schritt.
+Die Simulation betrachtet ein einzelnes Projekt isoliert. In einem Portfolio-Kontext k\"onnen Diversifikationseffekte auftreten.
 
 % ==================================================================
 % ABSCHNITT 6: FAZIT
@@ -534,29 +510,29 @@ Die Simulation betrachtet ein einzelnes Projekt isoliert. In einem Portfolio-Kon
 
 \subsection{Zusammenfassung}
 
-Die Monte-Carlo-Simulation bietet einen signifikanten Mehrwert gegenüber deterministischen Investitionsrechnungen in der Ölindustrie:
+Die Monte-Carlo-Simulation bietet einen signifikanten Mehrwert gegen\"uber deterministischen Investitionsrechnungen in der \"Olindustrie:
 
 \begin{enumerate}[label=\arabic*., itemsep=4pt]
-  \item \textbf{Von Einzelpunkt zu Verteilung}: Statt einer einzelnen ROI-Zahl erhalten Entscheidungsträger eine vollständige Risikoverteilung, die die wesentliche Information enthält: \textbf{Wie wahrscheinlich ist ein Verlust?}
-  \item \textbf{Wissenschaftlich fundierte Verteilungswahl}: Die Kombination aus Dreiecks-/PERT-Verteilungen (für Expertenschätzungen) und Lognormalverteilung (für Rohstoffpreise) ist datengerecht und theoriekonform.
-  \item \textbf{Praktische Entscheidungshilfe}: Die Kennzahlen Value at Risk (VaR) und Probability of Loss ($P(\text{ROI} < 0)$) sind direkt entscheidungsrelevant und können in Investitionskomitees kommuniziert werden.
-  \item \textbf{Identifikation von Risikotreibern}: Die Sensitivitätsanalyse zeigt, dass der Ölpreis den größten Beitrag zur ROI-Varianz leistet — eine Erkenntnis, die für Hedging-Strategien und Vertragsstrukturen direkt relevant ist.
+  \item \textbf{Von Einzelpunkt zu Verteilung}: Statt einer einzelnen ROI-Zahl erhalten Entscheidungstr\"ager eine vollst\"andige Risikoverteilung.
+  \item \textbf{Wissenschaftlich fundierte Verteilungswahl}: Die Kombination aus Dreiecksverteilungen (f\"ur Expertensch\"atzungen) und Lognormalverteilung (f\"ur Rohstoffpreise) ist datengerecht und theoriekonform.
+  \item \textbf{Praktische Entscheidungshilfe}: Value at Risk und Probability of Loss sind direkt entscheidungsrelevante Kennzahlen.
+  \item \textbf{Identifikation von Risikotreibern}: Die Sensitivit\"atsanalyse zeigt die relative Bedeutung der Inputvariablen.
 \end{enumerate}
 
 \subsection{Ausblick}
 
-Folgende Erweiterungen werden für die nächste Iteration empfohlen:
+Folgende Erweiterungen werden f\"ur die n\"achste Iteration empfohlen:
 
 \begin{itemize}[itemsep=2pt]
-  \item \textbf{Korrelationsmodellierung} mittels Copulas zur Erfassung von Abhängigkeiten
-  \item \textbf{Realoptionsansatz} zur Bewertung von Management-Flexibilität
-  \item \textbf{Zeitabhängige Parameter} für dynamische Ölpreismodelle (Mean-Reversion)
+  \item \textbf{Korrelationsmodellierung} mittels Copulas zur Erfassung von Abh\"angigkeiten
+  \item \textbf{Realoptionsansatz} zur Bewertung von Management-Flexibilit\"at
+  \item \textbf{Zeitabh\"angige Parameter} f\"ur dynamische \"Olpreismodelle (Mean-Reversion)
   \item \textbf{Portfolio-Simulation} zur Quantifizierung von Diversifikationseffekten
   \item \textbf{Bayesian Updating} zur Integration neuer Informationen im Projektverlauf
 \end{itemize}
 
 % ==================================================================
-% LITERATURHINWEISE
+% LITERATUR
 % ==================================================================
 \begin{thebibliography}{99}
 
@@ -575,12 +551,6 @@ Brennan, M.\,J.\ \& Schwartz, E.\,S.\ (1985).
 Evaluating Natural Resource Investments.
 \textit{The Journal of Business}, 58(2), 135--157.
 
-\bibitem{marathe2005}
-Marathe, R.\,R.\ \& Ryan, S.\,M.\ (2005).
-On the Validity of the Geometric Brownian Motion Assumption.
-\textit{The Engineering Economist}, 50(2), 159--176.
-DOI:~10.1080/00137910590949904.
-
 \bibitem{alharthy2007}
 Al-Harthy, M.\,H.\ (2007).
 Stochastic Oil Price Models: Comparison and Impact.
@@ -597,8 +567,6 @@ SPE~52949 (1999).
 Comparing Three Methods for Evaluating Oil Projects: Option Pricing, Decision Trees, and Monte Carlo Simulations.
 \textit{Society of Petroleum Engineers}.
 
-% -- Allgemeine Referenzen (aus v1.0) --------------------------------
-
 \bibitem{glasserman2004}
 Glasserman, P.\ (2004).
 \textit{Monte Carlo Methods in Financial Engineering}.
@@ -612,7 +580,7 @@ Wiley Finance.
 \bibitem{opec2026}
 Organization of the Petroleum Exporting Countries (OPEC).\ (2026).
 \textit{OPEC Basket Price}.
-Online verfügbar unter: https://www.opec.org/opec-basket-price.html (abgerufen am 29.04.2026).
+Online verf\"ugbar unter: \url{https://www.opec.org/opec-basket-price.html} (abgerufen am 29.04.2026).
 
 \bibitem{hertz1964}
 Hertz, D.\,B.\ (1964).
@@ -624,32 +592,10 @@ Vose, D.\ (2008).
 \textit{Risk Analysis: A Quantitative Guide}.
 Wiley.
 
-\bibitem{petrol}
-Ganat, T. A. O.\ (2020).
-\textit{Technical Guidance for Petroleum Exploration and Production Plans}.
-Springer, Cham.
-
-ISBN 978-3-030-45249-0
-
-\bibitem{weber2016}
-Weber, J.\ und Schäffer, U.\ (2016).
-\textit{Einführung in das Controlling} (15.\ Aufl.).
-Schäffer-Poeschel.
-
-\bibitem{trigeorgis1996}
-Trigeorgis, L.\ (1996).
-\textit{Real Options: Managerial Flexibility and Strategy in Resource Investment}.
-MIT Press.
-
-\bibitem{mun2006}
-Mun, J.\ (2006).
-\textit{Real Options Analysis: Tools and Techniques}.
-Wiley Finance.
-
 \bibitem{leonteq2023}
 Leonteq Securities AG.\ (2023).
 \textit{Leonteq Brent Crude Oil Futures Total Return Index (LEONCOTT Index)}.
-Online verfügbar unter: https://indices.leonteq.com/index-details/LEONCOTT\%20Index (abgerufen am 29.04.2026).
+Online verf\"ugbar unter: \url{https://indices.leonteq.com/index-details/LEONCOTT\%20Index} (abgerufen am 29.04.2026).
 
 \end{thebibliography}
 
