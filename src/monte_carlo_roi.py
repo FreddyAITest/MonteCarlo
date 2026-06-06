@@ -351,11 +351,18 @@ def _run_stlib(
         )
     sens_rows.sort(key=lambda r: r["relative_influence_pct"], reverse=True)
 
+    # Bootstrap-Konfidenzintervall (echtes Resampling) für den Mittelwert
+    boot_rng = _random.Random(config.seed + 1)
+    boot_means: list[float] = []
+    n_boot = min(config.bootstrap_samples, 1000)
+    for _ in range(n_boot):
+        sample = [rois[boot_rng.randrange(n)] for _ in range(n)]
+        boot_means.append(_stats.fmean(sample))
     boot = {
-        "mean": mean,
-        "ci_low": mean,
-        "ci_high": mean,
-        "std_error": std / math.sqrt(n),
+        "mean": _stats.fmean(boot_means),
+        "ci_low": _percentile(sorted(boot_means), 2.5),
+        "ci_high": _percentile(sorted(boot_means), 97.5),
+        "std_error": _stats.stdev(boot_means) if n_boot > 1 else 0.0,
     }
 
     files: list[Path] = []
@@ -370,9 +377,9 @@ def _run_stlib(
     )
 
     json_path = output_dir / "results.json"
+    result.files.append(json_path)
     json_path.write_text(json.dumps(result.to_json(), indent=2,
                                     ensure_ascii=False))
-    result.files.append(json_path)
     return result
 
 
@@ -668,9 +675,9 @@ def run(
     )
 
     json_path = output_dir / "results.json"
+    result.files.append(json_path)
     json_path.write_text(json.dumps(result.to_json(), indent=2,
                                     ensure_ascii=False))
-    result.files.append(json_path)
     return result
 
 
