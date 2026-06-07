@@ -1,10 +1,20 @@
 """
-Monte-Carlo-ROI-Simulation für ölindustrielle Investitionsprojekte.
+Monte-Carlo-Simulation des Lifetime Capital Multiple (LCM) für
+ölindustrielle Investitionsprojekte.
 
-Dieses Skript implementiert das im Working Paper "Stochastische ROI-Bewertung
-mittels Monte-Carlo-Simulation" beschriebene Vier-Variablen-Modell und erzeugt
-die im Paper referenzierten Abbildungen (Inputverteilungen, ROI-Histogramm,
-Tornado-Diagramm der Sensitivitätsanalyse).
+Hinweis zur Nomenklatur: Die in [ELI-19](/ELI/issues/ELI-19) analysierte
+Stichprobenkennzahl wird im Working Paper informell "ROI" genannt, ist
+aber kein annualisierter Return, sondern ein *Lifetime Cumulative Capital
+Multiple* (kurz LCM bzw. ``lifetime_capital_multiple``). Zur Vermeidung
+von Fehlinterpretationen (vgl. [ELI-18](/ELI/issues/ELI-18)) wurde die
+Bezeichnung in [ELI-24](/ELI/issues/ELI-24) konsequent umgestellt. Die
+mathematische Formel ist unverändert.
+
+Dieses Skript implementiert das im Working Paper "Stochastische
+ROI-Bewertung mittels Monte-Carlo-Simulation" beschriebene
+Vier-Variablen-Modell und erzeugt die im Paper referenzierten Abbildungen
+(Inputverteilungen, LCM-Histogramm, Tornado-Diagramm der
+Sensitivitätsanalyse).
 
 Aufruf:
 
@@ -14,11 +24,11 @@ Aufruf:
 
 Ausgaben (im Output-Verzeichnis, default ``./output``):
 
-    roi_distribution.pdf / .png   Histogramm + Kennzahlen der ROI-Stichprobe
+    lcm_distribution.pdf / .png   Histogramm + Kennzahlen der LCM-Stichprobe
     sensitivity_tornado.pdf / .png Tornado-Diagramm der Sensitivitätsanalyse
     inputs_distribution.pdf / .png Verteilungen der vier Inputvariablen
     results.json                  Kennzahlen + Stichproben-Konfidenz
-    samples.csv                   Stichprobe (CAPEX, OPEX, Volumen, Preis, ROI)
+    samples.csv                   Stichprobe (CAPEX, OPEX, Volumen, Preis, LCM)
 
 Abhängigkeiten: numpy, matplotlib, scipy (für die Dichtefunktion der
 Dreiecksverteilung, die in den Input-Plots als Referenzlinie dient).
@@ -236,18 +246,32 @@ def sample_inputs(
     }
 
 
-def compute_roi(samples: dict[str, "np.ndarray"]) -> "np.ndarray":
-    """Berechnet den ROI nach der im Paper definierten Formel (alle Werte in $M).
+def compute_lcm(samples: dict[str, "np.ndarray"]) -> "np.ndarray":
+    """Berechnet den Lifetime Capital Multiple nach der im Paper definierten Formel.
 
-    ROI = (Preis · Volumen − CAPEX − OPEX) / CAPEX
+    LCM = (Preis · Volumen − CAPEX − OPEX) / CAPEX
 
-    Preise in $/Barrel, Volumen in M Barrel, CAPEX/OPEX in $M.
-    Damit ist (Preis · Volumen) bereits in $M und alle Terme sind konsistent.
+    Die Kennzahl wird im Working Paper informell als "ROI" bezeichnet, ist
+    aber *kein* annualisierter Return, sondern ein kumulatives
+    Lebensdauer-Kapitalvielfaches (siehe [ELI-24](/ELI/issues/ELI-24)). Die
+    Preise sind in $/Barrel, das Volumen in M Barrel, CAPEX/OPEX in $M —
+    damit ist (Preis · Volumen) bereits in $M und alle Terme sind konsistent.
     """
     _ensure_numpy()
     revenue = samples["price"] * samples["volume"]
     profit = revenue - samples["capex"] - samples["opex"]
     return profit / samples["capex"]
+
+
+def compute_roi(samples: dict[str, "np.ndarray"]) -> "np.ndarray":
+    """Deprecated alias für :func:`compute_lcm`.
+
+    Wird für eine Release-Phase als Rückwärtskompatibilitäts-Shim
+    vorgehalten, damit externe Konsumenten, die noch ``compute_roi``
+    importieren, weiterhin funktionieren. Neue Aufrufe sollten
+    ``compute_lcm`` verwenden.
+    """
+    return compute_lcm(samples)
 
 
 # ---------------------------------------------------------------------------
@@ -302,28 +326,28 @@ def _run_stlib(
         samples["price"].append(_lognormal_stlib(config.price.mean,
                                                 config.price.sigma, rng))
 
-    rois: list[float] = []
+    lcms: list[float] = []
     for c, o, v, p in zip(samples["capex"], samples["opex"],
                           samples["volume"], samples["price"]):
-        rois.append((p * v - c - o) / c)
+        lcms.append((p * v - c - o) / c)
 
-    sorted_roi = sorted(rois)
-    n = len(sorted_roi)
-    mean = _stats.fmean(rois)
-    std = _stats.stdev(rois) if n > 1 else 0.0
+    sorted_lcm = sorted(lcms)
+    n = len(sorted_lcm)
+    mean = _stats.fmean(lcms)
+    std = _stats.stdev(lcms) if n > 1 else 0.0
     summary = {
         "n": n,
         "mean": mean,
         "std": std,
-        "median": _stats.median(rois),
-        "p05": _percentile(sorted_roi, 5),
-        "p25": _percentile(sorted_roi, 25),
-        "p75": _percentile(sorted_roi, 75),
-        "p95": _percentile(sorted_roi, 95),
-        "min": sorted_roi[0],
-        "max": sorted_roi[-1],
-        "var_5pct": _percentile(sorted_roi, 5),
-        "probability_of_loss": sum(1 for r in rois if r < 0) / n,
+        "median": _stats.median(lcms),
+        "p05": _percentile(sorted_lcm, 5),
+        "p25": _percentile(sorted_lcm, 25),
+        "p75": _percentile(sorted_lcm, 75),
+        "p95": _percentile(sorted_lcm, 95),
+        "min": sorted_lcm[0],
+        "max": sorted_lcm[-1],
+        "var_5pct": _percentile(sorted_lcm, 5),
+        "probability_of_loss": sum(1 for r in lcms if r < 0) / n,
         "skewness": float("nan"),
         "kurtosis": float("nan"),
     }
@@ -341,7 +365,7 @@ def _run_stlib(
     total = 0.0
     sens_rows: list[dict[str, float]] = []
     for name, xs in samples.items():
-        r = _corr(xs, rois)
+        r = _corr(xs, lcms)
         r2 = r * r
         sens_rows.append({"variable": name, "pearson_r": r, "r_squared": r2})
         total += r2
@@ -356,7 +380,7 @@ def _run_stlib(
     boot_means: list[float] = []
     n_boot = min(config.bootstrap_samples, 1000)
     for _ in range(n_boot):
-        sample = [rois[boot_rng.randrange(n)] for _ in range(n)]
+        sample = [lcms[boot_rng.randrange(n)] for _ in range(n)]
         boot_means.append(_stats.fmean(sample))
     boot = {
         "mean": _stats.fmean(boot_means),
@@ -369,7 +393,7 @@ def _run_stlib(
     result = SimulationResult(
         config=config,
         samples={k: v for k, v in samples.items()},  # type: ignore[dict-item]
-        roi=rois,  # type: ignore[arg-type]
+        lcm=lcms,  # type: ignore[arg-type]
         summary=summary,
         bootstrap=boot,
         sensitivity=sens_rows,
@@ -388,40 +412,49 @@ def _run_stlib(
 # ---------------------------------------------------------------------------
 
 
-def summarize_roi(roi: "np.ndarray", confidence: float) -> dict[str, float]:
-    """Berechnet die im Paper berichteten Kennzahlen."""
+def summarize_lcm(lcm: "np.ndarray", confidence: float) -> dict[str, float]:
+    """Berechnet die im Paper berichteten Kennzahlen für die LCM-Stichprobe."""
     _ensure_numpy()
-    n = roi.size
+    n = lcm.size
     var_alpha = (1.0 - confidence) * 100.0
-    var_value = float(np.percentile(roi, var_alpha))
+    var_value = float(np.percentile(lcm, var_alpha))
     return {
         "n": int(n),
-        "mean": float(roi.mean()),
-        "std": float(roi.std(ddof=1)),
-        "median": float(np.median(roi)),
-        "p05": float(np.percentile(roi, 5)),
-        "p25": float(np.percentile(roi, 25)),
-        "p75": float(np.percentile(roi, 75)),
-        "p95": float(np.percentile(roi, 95)),
-        "min": float(roi.min()),
-        "max": float(roi.max()),
+        "mean": float(lcm.mean()),
+        "std": float(lcm.std(ddof=1)),
+        "median": float(np.median(lcm)),
+        "p05": float(np.percentile(lcm, 5)),
+        "p25": float(np.percentile(lcm, 25)),
+        "p75": float(np.percentile(lcm, 75)),
+        "p95": float(np.percentile(lcm, 95)),
+        "min": float(lcm.min()),
+        "max": float(lcm.max()),
         "var_5pct": var_value,
-        "probability_of_loss": float((roi < 0).mean()),
-        "skewness": float(((roi - roi.mean()) ** 3).mean() / roi.std(ddof=1) ** 3),
-        "kurtosis": float(((roi - roi.mean()) ** 4).mean() / roi.std(ddof=1) ** 4 - 3.0),
+        "probability_of_loss": float((lcm < 0).mean()),
+        "skewness": float(((lcm - lcm.mean()) ** 3).mean() / lcm.std(ddof=1) ** 3),
+        "kurtosis": float(((lcm - lcm.mean()) ** 4).mean() / lcm.std(ddof=1) ** 4 - 3.0),
     }
 
 
+def summarize_roi(roi: "np.ndarray", confidence: float) -> dict[str, float]:
+    """Deprecated alias für :func:`summarize_lcm`.
+
+    Wird für eine Release-Phase als Rückwärtskompatibilitäts-Shim
+    vorgehalten. Neue Aufrufe sollten ``summarize_lcm`` verwenden.
+    """
+    return summarize_lcm(roi, confidence)
+
+
 def bootstrap_mean(
-    roi: "np.ndarray", samples: int, confidence: float, rng: "np.random.Generator"
+    lcm: "np.ndarray", samples: int, confidence: float, rng: "np.random.Generator"
 ) -> dict[str, float]:
     """Bootstrap-Konfidenzintervall für den Erwartungswert."""
     _ensure_numpy()
     means = np.empty(samples, dtype=float)
-    n = roi.size
+    n = lcm.size
     for i in range(samples):
         idx = rng.integers(0, n, size=n)
-        means[i] = roi[idx].mean()
+        means[i] = lcm[idx].mean()
     alpha = 1.0 - confidence
     return {
         "mean": float(means.mean()),
@@ -432,14 +465,14 @@ def bootstrap_mean(
 
 
 def sensitivity(
-    samples: dict[str, "np.ndarray"], roi: "np.ndarray"
+    samples: dict[str, "np.ndarray"], lcm: "np.ndarray"
 ) -> list[dict[str, float]]:
     """Pearson-Korrelation + normiertes R² für jede Inputvariable."""
     _ensure_numpy()
     total = 0.0
     rows: list[dict[str, float]] = []
     for name, values in samples.items():
-        r = float(np.corrcoef(values, roi)[0, 1])
+        r = float(np.corrcoef(values, lcm)[0, 1])
         r2 = r * r
         rows.append({"variable": name, "pearson_r": r, "r_squared": r2})
         total += r2
@@ -506,22 +539,22 @@ def plot_inputs(samples: dict[str, "np.ndarray"], output_dir: Path) -> Path:
     return target
 
 
-def plot_roi_distribution(
-    roi: "np.ndarray", summary: dict[str, float], output_dir: Path
+def plot_lcm_distribution(
+    lcm: "np.ndarray", summary: dict[str, float], output_dir: Path
 ) -> Path:
     _ensure_matplotlib()
     fig, ax = plt.subplots(figsize=(10, 6))
     bins = 80
-    counts, edges, patches = ax.hist(roi, bins=bins, density=True,
+    counts, edges, patches = ax.hist(lcm, bins=bins, density=True,
                                      color="#4c72b0", alpha=0.75,
                                      edgecolor="white", label="Stichprobe")
     if _ensure_scipy():
-        xs = np.linspace(roi.min(), roi.max(), 400)
-        kde = _scipy_stats.gaussian_kde(roi)
+        xs = np.linspace(lcm.min(), lcm.max(), 400)
+        kde = _scipy_stats.gaussian_kde(lcm)
         ax.plot(xs, kde(xs), color="black", lw=1.5, label="KDE")
 
     ax.axvline(0, color="#c44e52", lw=1.2, ls="--",
-               label=f"P(ROI<0) = {summary['probability_of_loss']:.1%}")
+               label=f"P(LCM<0) = {summary['probability_of_loss']:.1%}")
     ax.axvline(summary["mean"], color="#2ca02c", lw=1.2, ls="-",
                label=f"Mean = {summary['mean']:.1%}")
     ax.axvline(summary["median"], color="#dd8452", lw=1.2, ls="-",
@@ -535,19 +568,30 @@ def plot_roi_distribution(
         f"Median = {summary['median']:.2%}\n"
         f"Std = {summary['std']:.2%}\n"
         f"VaR 5% = {summary['var_5pct']:.2%}\n"
-        f"P(ROI<0) = {summary['probability_of_loss']:.2%}"
+        f"P(LCM<0) = {summary['probability_of_loss']:.2%}"
     )
     ax.text(0.98, 0.97, text, transform=ax.transAxes, ha="right", va="top",
             family="monospace", fontsize=10,
             bbox=dict(facecolor="white", alpha=0.85, edgecolor="lightgray"))
 
-    ax.set_title("ROI-Histogramm der Monte-Carlo-Simulation")
-    ax.set_xlabel("ROI")
+    ax.set_title("Lifetime Capital Multiple — Verteilung der Monte-Carlo-Simulation")
+    ax.set_xlabel("Lifetime Capital Multiple")
     ax.set_ylabel("Dichte")
     ax.legend(loc="upper left", fontsize=9)
-    target = output_dir / "roi_distribution.png"
+    target = output_dir / "lcm_distribution.png"
     _save(fig, target)
     return target
+
+
+def plot_roi_distribution(
+    roi: "np.ndarray", summary: dict[str, float], output_dir: Path
+) -> Path:
+    """Deprecated alias für :func:`plot_lcm_distribution`.
+
+    Wird für eine Release-Phase als Rückwärtskompatibilitäts-Shim
+    vorgehalten. Neue Aufrufe sollten ``plot_lcm_distribution`` verwenden.
+    """
+    return plot_lcm_distribution(roi, summary, output_dir)
 
 
 def plot_tornado(sensitivity_rows: Sequence[dict[str, float]], output_dir: Path) -> Path:
@@ -557,8 +601,8 @@ def plot_tornado(sensitivity_rows: Sequence[dict[str, float]], output_dir: Path)
 
     fig, ax = plt.subplots(figsize=(8, 5))
     bars = ax.barh(names[::-1], values[::-1], color="#4c72b0", edgecolor="white")
-    ax.set_xlabel("Anteil an erklärter ROI-Varianz (%)")
-    ax.set_title("Tornado-Diagramm — Sensitivitätsanalyse")
+    ax.set_xlabel("Anteil an erklärter LCM-Varianz (%)")
+    ax.set_title("Tornado-Diagramm — Sensitivitätsanalyse (LCM)")
     ax.set_xlim(0, max(values) * 1.15 if values else 1.0)
     for bar, value in zip(bars, values[::-1]):
         ax.text(bar.get_width() + 0.5, bar.get_y() + bar.get_height() / 2,
@@ -577,11 +621,21 @@ def plot_tornado(sensitivity_rows: Sequence[dict[str, float]], output_dir: Path)
 class SimulationResult:
     config: SimulationConfig
     samples: dict[str, Any]
-    roi: Any
+    lcm: Any
     summary: dict[str, float]
     bootstrap: dict[str, float]
     sensitivity: list[dict[str, float]]
     files: list[Path] = field(default_factory=list)
+
+    @property
+    def roi(self) -> Any:
+        """Deprecated Alias für :attr:`lcm` (Rückwärtskompatibilität).
+
+        Externe Konsumenten, die noch ``result.roi`` lesen, bekommen
+        weiterhin die Stichprobe zurück. Neue Aufrufe sollten
+        ``result.lcm`` verwenden.
+        """
+        return self.lcm
 
     def to_json(self) -> dict:
         def _round(value):
@@ -595,6 +649,8 @@ class SimulationResult:
                 return None
             return result
 
+        rounded_summary = {k: _round(v) for k, v in self.summary.items()}
+        rounded_bootstrap = {k: _round(v) for k, v in self.bootstrap.items()}
         return {
             "config": {
                 "iterations": self.config.iterations,
@@ -608,13 +664,24 @@ class SimulationResult:
                 "expected_inputs": {k: _round(v)
                                     for k, v in self.config.expected_metrics().items()},
             },
-            "summary": {k: _round(v) for k, v in self.summary.items()},
-            "bootstrap_mean": {k: _round(v) for k, v in self.bootstrap.items()},
+            "lifetime_capital_multiple": {
+                "summary": rounded_summary,
+                "bootstrap_mean": rounded_bootstrap,
+            },
             "sensitivity": [
                 {k: _round(v) for k, v in row.items()}
                 for row in self.sensitivity
             ],
             "artifacts": [str(p) for p in self.files],
+            # Deprecated Top-Level-Aliase (eine Release-Phase): identische
+            # Daten wie ``lifetime_capital_multiple``, damit ältere
+            # Konsumenten ohne Schema-Migration weiter funktionieren.
+            "summary": rounded_summary,
+            "bootstrap_mean": rounded_bootstrap,
+            "roi": {
+                "summary": rounded_summary,
+                "bootstrap_mean": rounded_bootstrap,
+            },
         }
 
 
@@ -641,25 +708,25 @@ def run(
     _ensure_numpy()
     rng = np.random.default_rng(config.seed)
     samples = sample_inputs(config, rng)
-    roi = compute_roi(samples)
-    summary = summarize_roi(roi, confidence=config.bootstrap_confidence)
-    boot = bootstrap_mean(roi, config.bootstrap_samples, config.bootstrap_confidence, rng)
-    sens = sensitivity(samples, roi)
+    lcm = compute_lcm(samples)
+    summary = summarize_lcm(lcm, confidence=config.bootstrap_confidence)
+    boot = bootstrap_mean(lcm, config.bootstrap_samples, config.bootstrap_confidence, rng)
+    sens = sensitivity(samples, lcm)
 
     files: list[Path] = []
     if _has_matplotlib():
         _ensure_matplotlib()
         files.append(plot_inputs(samples, output_dir))
-        files.append(plot_roi_distribution(roi, summary, output_dir))
+        files.append(plot_lcm_distribution(lcm, summary, output_dir))
         files.append(plot_tornado(sens, output_dir))
     else:
         print("[WARNUNG] matplotlib fehlt – überspringe Plots.")
 
     if write_csv:
         csv_path = output_dir / "samples.csv"
-        header = ",".join(["capex", "opex", "volume", "price", "roi"])
+        header = ",".join(["capex", "opex", "volume", "price", "lifetime_capital_multiple"])
         stack = np.column_stack([samples["capex"], samples["opex"],
-                                 samples["volume"], samples["price"], roi])
+                                 samples["volume"], samples["price"], lcm])
         np.savetxt(csv_path, stack, delimiter=",", header=header,
                    comments="", fmt="%.6f")
         files.append(csv_path)
@@ -667,7 +734,7 @@ def run(
     result = SimulationResult(
         config=config,
         samples=samples,
-        roi=roi,
+        lcm=lcm,
         summary=summary,
         bootstrap=boot,
         sensitivity=sens,
@@ -686,13 +753,15 @@ def _format_pct(value: float) -> str:
 
 
 def print_report(result: SimulationResult) -> None:
-    print("\n=== Monte-Carlo-ROI — Ergebnisreport ===")
+    print("\n=== Monte-Carlo Lifetime Capital Multiple — Ergebnisreport ===")
+    print("Hinweis: Die berichtete Kennzahl ist ein Lifetime Cumulative Capital")
+    print("Multiple (LCM), kein annualisierter Return on Investment.")
     cfg = result.config
-    print(f"Iterationen : {cfg.iterations:,}  (Seed = {cfg.seed})")
+    print(f"\nIterationen : {cfg.iterations:,}  (Seed = {cfg.seed})")
     print(f"\nInput-Erwartungswerte (analytisch):")
     for key, value in cfg.expected_metrics().items():
         print(f"  {key:10s} = {value:10.2f} $M")
-    print("\nROI-Kennzahlen (Stichprobe):")
+    print("\nLifetime Capital Multiple — Kennzahlen (Stichprobe):")
     s = result.summary
     print(f"  Mean     = {_format_pct(s['mean'])}")
     print(f"  Median   = {_format_pct(s['median'])}")
@@ -700,12 +769,12 @@ def print_report(result: SimulationResult) -> None:
     print(f"  P05      = {_format_pct(s['p05'])}")
     print(f"  P95      = {_format_pct(s['p95'])}")
     print(f"  VaR 5%   = {_format_pct(s['var_5pct'])}")
-    print(f"  P(ROI<0) = {_format_pct(s['probability_of_loss'])}")
+    print(f"  P(LCM<0) = {_format_pct(s['probability_of_loss'])}")
     print(f"  Min/Max  = {_format_pct(s['min'])} / {_format_pct(s['max'])}")
     b = result.bootstrap
     print(f"\nBootstrap-{int(cfg.bootstrap_confidence*100)}%-KI für Mean: "
           f"[{b['ci_low']:.2%}, {b['ci_high']:.2%}]  (SE = {b['std_error']:.2%})")
-    print("\nSensitivitätsanalyse (relativer Varianzanteil):")
+    print("\nSensitivitätsanalyse (relativer Varianzanteil am LCM):")
     for row in result.sensitivity:
         print(f"  {row['variable']:7s} r = {row['pearson_r']:+.3f}  "
               f"R² = {row['r_squared']:.3f}  Anteil = {row['relative_influence_pct']:.1f}%")

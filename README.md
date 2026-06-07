@@ -1,4 +1,4 @@
-# Monte-Carlo-ROI-Skript
+# Monte-Carlo-LCM-Skript
 
 Begleitender Code zum Working Paper *"Stochastische ROI-Bewertung mittels
 Monte-Carlo-Simulation"* (Scho & Finkenzeller, 2026).
@@ -54,11 +54,11 @@ Im Output-Verzeichnis (Standard `output/`):
 
 | Datei | Inhalt |
 | --- | --- |
-| `roi_distribution.png` / `.pdf` | Histogramm + KDE der ROI-Stichprobe mit Mean, Median, VaR 5 % und P(ROI<0) |
+| `lcm_distribution.png` / `.pdf` | Histogramm + KDE der LCM-Stichprobe mit Mean, Median, VaR 5 % und P(LCM<0) |
 | `inputs_distribution.png` / `.pdf` | Histogramme + theoretische Dichten der vier Inputvariablen |
 | `sensitivity_tornado.png` / `.pdf` | Tornado-Diagramm der Pearson-basierten Sensitivitätsanalyse |
 | `results.json` | Konfiguration, Kennzahlen, Bootstrap-Konfidenzintervall, Sensitivitäts-Tabelle |
-| `samples.csv` | Stichprobe (CAPEX, OPEX, Volumen, Preis, ROI) — überspringbar mit `--no-csv` |
+| `samples.csv` | Stichprobe (CAPEX, OPEX, Volumen, Preis, Lifetime Capital Multiple) — überspringbar mit `--no-csv` |
 
 ## Inputvariablen
 
@@ -69,9 +69,9 @@ Im Output-Verzeichnis (Standard `output/`):
 | Fördervolumen | Dreiecksverteilung | `Tri(50M, 150M, 300M)` Barrel | §4.1 |
 | Ölpreis | Lognormal | `LogN(μ≈4.20, σ≈0.35)` — E[X] ≈ 70 $/Barrel, σ_X ≈ 25 $/Barrel | §3.2.2 |
 
-Die ROI-Formel folgt der im Paper in §3.3 angegebenen Definition:
+Die LCM-Formel (im Paper informell als "ROI" bezeichnet) folgt der in §3.3 angegebenen Definition:
 
-    ROI = (Preis · Volumen − CAPEX − OPEX) / CAPEX
+    LCM = (Preis · Volumen − CAPEX − OPEX) / CAPEX
 
 ## Tests
 

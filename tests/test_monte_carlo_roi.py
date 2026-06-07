@@ -1,11 +1,15 @@
 """
-Stdlib-Smoketest für die Monte-Carlo-ROI-Implementierung.
+Stdlib-Smoketest für die Monte-Carlo-LCM-Implementierung.
 
 Da die Zielumgebung möglicherweise kein numpy / matplotlib installiert hat,
 reimplementiert dieser Test die zentralen Bausteine (Triangular-Sampling,
-Lognormal-Sampling, ROI-Berechnung, Kennzahlen) in reiner Standardbibliothek
+Lognormal-Sampling, LCM-Berechnung, Kennzahlen) in reiner Standardbibliothek
 und vergleicht sie mit den analytischen Erwartungswerten sowie mit der
 Referenzimplementierung in ``src.monte_carlo_roi``, falls numpy vorhanden ist.
+
+Hinweis zur Nomenklatur: Die ehemals als "ROI" bezeichnete Kennzahl heißt
+jetzt ``lifetime_capital_multiple`` (LCM). Die algebraische Formel ist
+unverändert.
 
 Ausgeführt mit:
 
@@ -56,7 +60,7 @@ def lognormal_sample(mean: float, sigma: float, rng: random.Random) -> float:
 
 def run_stlib_sim(config: SimulationConfig, seed: int = 1234) -> list[float]:
     rng = random.Random(seed)
-    rois: list[float] = []
+    lcms: list[float] = []
     for _ in range(config.iterations):
         capex = triangular_sample(config.capex.low, config.capex.mode,
                                   config.capex.high, rng)
@@ -67,8 +71,8 @@ def run_stlib_sim(config: SimulationConfig, seed: int = 1234) -> list[float]:
         price = lognormal_sample(config.price.mean, config.price.sigma, rng)
         revenue = price * volume
         profit = revenue - capex - opex
-        rois.append(profit / capex)
-    return rois
+        lcms.append(profit / capex)
+    return lcms
 
 
 # ---------------------------------------------------------------------------
@@ -120,7 +124,7 @@ def test_simulation_plausibility(iterations: int = 20_000) -> tuple[bool, list[s
     """Plausibilität der Verteilung (nicht absolute Werte).
 
     Die im Paper berichteten Tilde-Werte (Mean ~45 %, P(loss) ~12 %)
-    widersprechen der im Paper selbst definierten ROI-Formel mit den
+    widersprechen der im Paper selbst definierten LCM-Formel mit den
     angegebenen Parametern. Die stochastischen Eigenschaften (Rechtsschiefe,
     Spannweite, Korrelationen) sind aber robust ableitbar. Wir prüfen
     diese strukturellen Eigenschaften.
@@ -135,14 +139,14 @@ def test_simulation_plausibility(iterations: int = 20_000) -> tuple[bool, list[s
         seed=2024,
     )
 
-    rois = run_stlib_sim(config, seed=config.seed)
-    mean = statistics.fmean(rois)
-    median = statistics.median(rois)
-    std = statistics.stdev(rois)
-    quantiles = statistics.quantiles(rois, n=100, method="inclusive")
+    lcms = run_stlib_sim(config, seed=config.seed)
+    mean = statistics.fmean(lcms)
+    median = statistics.median(lcms)
+    std = statistics.stdev(lcms)
+    quantiles = statistics.quantiles(lcms, n=100, method="inclusive")
     p01, p50, p99 = quantiles[0], quantiles[49], quantiles[98]
 
-    print(f"  info  N = {len(rois):,}")
+    print(f"  info  N = {len(lcms):,}")
     print(f"  info  Mean={mean:.2%} Median={median:.2%} Std={std:.2%}")
     print(f"  info  P01={p01:.2%} P50={p50:.2%} P99={p99:.2%}")
 
@@ -212,12 +216,12 @@ def test_consistency_with_numpy() -> tuple[bool, list[str]]:
         print("  skip  numpy nicht verfügbar – Cross-Check übersprungen")
         return True, []
 
-    from src.monte_carlo_roi import compute_roi, sample_inputs, summarize_roi
+    from src.monte_carlo_roi import compute_lcm, sample_inputs, summarize_lcm
     config = default_config()
     rng = np.random.default_rng(config.seed)
     samples = sample_inputs(config, rng)
-    roi = compute_roi(samples)
-    summary = summarize_roi(roi, confidence=0.95)
+    lcm = compute_lcm(samples)
+    summary = summarize_lcm(lcm, confidence=0.95)
 
     # Die im Paper berichteten Werte sind grobe Schätzungen — wir prüfen
     # nur, dass die Implementierung sich im Bereich sinnvoller Größenordnungen
@@ -240,7 +244,7 @@ def test_consistency_with_numpy() -> tuple[bool, list[str]]:
 
 
 def main() -> int:
-    print("=== Monte-Carlo-ROI :: Plausibilitätstest (stdlib) ===")
+    print("=== Monte-Carlo-LCM :: Plausibilitätstest (stdlib) ===")
     suites: list[tuple[str, callable]] = [
         ("Config-Validierung", test_config_validation),
         ("Analytische Erwartungswerte", test_analytical_match),
