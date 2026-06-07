@@ -6,7 +6,8 @@ Monte-Carlo-Simulation"* (Scho & Finkenzeller, 2026).
 Das Skript `src/monte_carlo_roi.py` implementiert das im Paper beschriebene
 Vier-Variablen-Modell (CAPEX, OPEX, Fördervolumen, Ölpreis), führt eine
 Monte-Carlo-Simulation durch und erzeugt die drei im Paper referenzierten
-Abbildungen.
+Abbildungen. Eine gleichwertige, schlanke Base-R-Implementierung befindet
+sich in `mc_simulation.R` (RStudio-tauglich, keine Zusatzpakete).
 
 ## Voraussetzungen
 
@@ -40,6 +41,11 @@ python -m src.monte_carlo_roi \
 
 # Nur Kennzahlen, keine Stichproben-CSV
 python -m src.monte_carlo_roi --no-csv
+
+# Base-R-Implementierung (RStudio / Rscript, keine Zusatzpakete)
+Rscript mc_simulation.R                       # Standardparameter
+Rscript mc_simulation.R --iterations 50000    # größere Stichprobe
+Rscript mc_simulation.R --kein-plot           # ohne Histogramm
 ```
 
 ## Ausgaben
@@ -89,6 +95,7 @@ Er prüft:
 src/
   __init__.py
   monte_carlo_roi.py   # Hauptmodul (CLI + API)
+mc_simulation.R        # Base-R-Implementierung (RStudio-tauglich)
 tests/
   test_monte_carlo_roi.py  # Stdlib-Smoketest
 output/                 # Wird beim Lauf angelegt
