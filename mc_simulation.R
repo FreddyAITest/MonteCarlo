@@ -1,26 +1,33 @@
 #!/usr/bin/env Rscript
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Monte-Carlo-ROI-Simulation für ölindustrielle Investitionsprojekte
+# Monte-Carlo-LCM-Simulation für ölindustrielle Investitionsprojekte
 # -----------------------------------------------------------------------------
 # Einfache RStudio-Implementierung des im Working Paper
 # "Stochastische ROI-Bewertung mittels Monte-Carlo-Simulation" (Scho &
-# Finkenzeller, 2026) beschriebenen Vier-Variablen-Modells.
+# Finkenzeller, 2026) beschriebenen Vier-Variablen-Modells, v3.0.
+#
+# Hinweis zur Nomenklatur: Die im Paper informell als "ROI" bezeichnete
+# Stichprobenkennzahl ist kein annualisierter Return, sondern ein Lifetime
+# Capital Multiple (LCM). Die mathematische Formel ist gegenüber v2.0
+# unverändert; OPEX wird gemäß v3.0 jedoch über die Projektlebensdauer T
+# annualisiert (siehe [ELI-25](/ELI/issues/ELI-25)).
 #
 # Verwendet ausschließlich Base-R (stats, graphics) — keine zusätzlichen
 # Pakete erforderlich. Die Verteilungen und Kennzahlen sind 1:1 kompatibel
-# zur Python-Referenzimplementierung in src/monte_carlo_roi.py.
+# zur Python-Referenzimplementierung in run_simulation.py.
 #
 # Aufruf:
 #     Rscript mc_simulation.R                       # Standardparameter
 #     Rscript mc_simulation.R --iterations 50000    # mehr Iterationen
 #     Rscript mc_simulation.R --seed 7              # anderer Zufallssamen
+#     Rscript mc_simulation.R --t-horizont 15       # andere Projektlaufzeit
 #     Rscript mc_simulation.R --kein-plot           # ohne Histogramm
 #
 # Ausgaben (im Output-Verzeichnis, default ./output):
-#     results_r.csv      Stichprobe (CAPEX, OPEX, Volumen, Preis, ROI)
+#     results_r.csv      Stichprobe (CAPEX, OPEX, Volumen, Preis, LCM)
 #     results_r.json     Kennzahlen als JSON (für Vergleich mit Python)
-#     roi_histogramm.pdf ROI-Histogramm mit VaR-Linie (Base-R-Graphics)
+#     lcm_histogramm.pdf LCM-Histogramm mit VaR-Linie (Base-R-Graphics)
 # =============================================================================
 
 # ---------------------------------------------------------------------------
@@ -29,10 +36,11 @@
 
 parse_args <- function(args) {
   defaults <- list(
-    iter    = 10000L,
-    seed    = 42L,
-    ausgabe = "output",
-    plot    = TRUE
+    iter       = 10000L,
+    seed       = 42L,
+    ausgabe    = "output",
+    plot       = TRUE,
+    t_horizont = 10L
   )
   i <- 1L
   while (i <= length(args)) {
@@ -41,6 +49,8 @@ parse_args <- function(args) {
       defaults$iter <- as.integer(args[[i + 1L]]); i <- i + 2L
     } else if (a == "--seed") {
       defaults$seed <- as.integer(args[[i + 1L]]); i <- i + 2L
+    } else if (a == "--t-horizont") {
+      defaults$t_horizont <- as.integer(args[[i + 1L]]); i <- i + 2L
     } else if (a == "--output-dir" || a == "--ausgabe") {
       defaults$ausgabe <- args[[i + 1L]]; i <- i + 2L
     } else if (a == "--kein-plot" || a == "--no-plot") {
@@ -57,13 +67,18 @@ parse_args <- function(args) {
 # ---------------------------------------------------------------------------
 # Werte in $M (CAPEX, OPEX), M Barrel (Volumen) bzw. $/Barrel (Preis).
 # Preise in $/Barrel, Volumen in M Barrel, CAPEX/OPEX in $M.
-# Damit ist (Preis * Volumen) bereits in $M und alle Terme in der ROI-Formel
+# Damit ist (Preis * Volumen) bereits in $M und alle Terme in der LCM-Formel
 # sind dimensionskonsistent.
 
-# Standardkonfiguration passend zu Abschnitt 4 des Papers.
-capex_min   <- 500.0;  capex_modus  <- 750.0;  capex_max  <- 1200.0
-opex_min    <- 80.0;   opex_modus   <- 120.0;  opex_max   <- 200.0
-volumen_min <- 50.0;   volumen_modus <- 150.0; volumen_max <- 300.0
+# Standardkonfiguration passend zu Abschnitt 4 des Papers (v3.0-Defaults).
+# Diese Werte sind 1:1 konsistent mit der Python-Referenz `run_simulation.py`
+# und mit Paper §4.1. Die OPEX-Triang-Parameter beschreiben den **jährlichen**
+# OPEX; die Annualisierung über T Jahre erfolgt in `run_simulation()`.
+# Der Offshore-Deepwater-Skalierungs-Vorschlag aus [ELI-26](/ELI/issues/ELI-26)
+# ist hier **nicht** angewandt — das ist Aufgabe eines separaten Tickets.
+capex_min   <-  500.0;  capex_modus  <-  750.0;  capex_max  <- 1200.0
+opex_min    <-   80.0;  opex_modus   <-  120.0;  opex_max   <-  200.0   # JÄHRLICH
+volumen_min <-   50.0;  volumen_modus <- 150.0; volumen_max <- 300.0
 
 # Lognormal-Parameter im Log-Raum (siehe Paper §3.2.2 und Python-Referenz).
 # Erwartungswert ≈ 70 $/Barrel, Streuung ≈ 25 $/Barrel.
@@ -113,56 +128,72 @@ lognormal_momente <- function(mu_ln, sigma_ln) {
 # 4. Simulation
 # ---------------------------------------------------------------------------
 
-run_simulation <- function(n_iter, startwert) {
+run_simulation <- function(n_iter, startwert, t_horizont) {
   set.seed(startwert)
 
   cat(sprintf("[INFO] Ziehe %d Stichproben aus den vier Verteilungen ...\n", n_iter))
+  cat(sprintf("[INFO] OPEX wird über T = %d Jahre annualisiert.\n", t_horizont))
 
-  capex   <- rtriang(n_iter, capex_min,   capex_modus,   capex_max)
-  opex    <- rtriang(n_iter, opex_min,    opex_modus,    opex_max)
-  volumen <- rtriang(n_iter, volumen_min, volumen_modus, volumen_max)
+  capex      <- rtriang(n_iter, capex_min,   capex_modus,   capex_max)
+  opex_annual <- rtriang(n_iter, opex_min,   opex_modus,    opex_max)
+  volumen    <- rtriang(n_iter, volumen_min, volumen_modus, volumen_max)
 
   preis <- rlogn_raum(n_iter, preis_mu, preis_sigma)
 
-  # ROI = (Preis * Volumen - CAPEX - OPEX) / CAPEX  (alle Terme in $M)
-  umsatz   <- preis * volumen
-  gewinn   <- umsatz - capex - opex
-  roi      <- gewinn / capex
+  # Annualisierung der OPEX über die Projektlebensdauer (v3.0-Semantik).
+  # Die Triang-Parameter oben beschreiben den jährlichen OPEX; der hier
+  # berechnete Gesamtwert über T Jahre geht in die LCM-Berechnung ein.
+  opex <- opex_annual * as.numeric(t_horizont)
 
-  list(capex = capex, opex = opex, volumen = volumen, preis = preis, roi = roi)
+  # LCM = (Preis * Volumen - CAPEX - OPEX) / CAPEX  (alle Terme in $M)
+  umsatz <- preis * volumen
+  gewinn <- umsatz - capex - opex
+  lcm    <- gewinn / capex
+
+  list(
+    capex        = capex,
+    opex         = opex,
+    opex_annual  = opex_annual,
+    volumen      = volumen,
+    preis        = preis,
+    lcm          = lcm
+  )
 }
 
 # ---------------------------------------------------------------------------
 # 5. Kennzahlen
 # ---------------------------------------------------------------------------
 
-kennzahlen <- function(roi) {
-  n   <- length(roi)
-  sor <- sort(roi)
+kennzahlen <- function(lcm) {
+  n   <- length(lcm)
+  sor <- sort(lcm)
   perzentil <- function(q) {
     pos <- (n - 1) * (q / 100)
     lo  <- floor(pos); hi <- ceiling(pos)
     if (lo == hi) sor[lo + 1L] else sor[lo + 1L] + (sor[hi + 1L] - sor[lo + 1L]) *
                                                        (pos - lo)
   }
-  m  <- mean(roi)
-  sd_ <- sd(roi)                         # Stichprobenstandardabweichung
-  schiefe <- mean(((roi - m) / sd_)^3)
-  kurt    <- mean(((roi - m) / sd_)^4) - 3
+  m   <- mean(lcm)
+  sd_ <- sd(lcm)                         # Stichprobenstandardabweichung
+  schiefe <- mean(((lcm - m) / sd_)^3)
+  kurt    <- mean(((lcm - m) / sd_)^4) - 3
 
   list(
     n                    = n,
     mean                 = m,
-    median               = median(roi),
+    median               = median(lcm),
     std                  = sd_,
     p05                  = perzentil(5),
     p25                  = perzentil(25),
     p75                  = perzentil(75),
     p95                  = perzentil(95),
-    min                  = min(roi),
-    max                  = max(roi),
+    min                  = min(lcm),
+    max                  = max(lcm),
     var_5pct             = perzentil(5),   # Value-at-Risk auf 5 %-Niveau
-    probability_of_loss  = mean(roi < 0),
+    # Schwelle gemäss [ELI-25](/ELI/issues/ELI-25): P(LCM < 1) statt P(ROI < 0).
+    # LCM < 1 bedeutet, dass das Projekt seine Investition nicht zurückverdient
+    # hat. Numerisch nicht identisch mit ROI < 0 — siehe cross_check_r_vs_py.md.
+    probability_of_loss  = mean(lcm < 1),
     skewness             = schiefe,
     kurtosis             = kurt
   )
@@ -172,30 +203,30 @@ kennzahlen <- function(roi) {
 # 6. Plot (Base-R-Graphics — keine Pakete erforderlich)
 # ---------------------------------------------------------------------------
 
-plot_roi <- function(roi, kz, ausgabe) {
-  pdf_path <- file.path(ausgabe, "roi_histogramm.pdf")
-  png_path <- file.path(ausgabe, "roi_histogramm.png")
+plot_lcm <- function(lcm, kz, ausgabe) {
+  pdf_path <- file.path(ausgabe, "lcm_histogramm.pdf")
+  png_path <- file.path(ausgabe, "lcm_histogramm.png")
 
   # PDF-Hauptdatei
   pdf(pdf_path, width = 10, height = 6)
 
   # Haupt-Histogramm
-  hist(roi, breaks = 80, freq = FALSE, col = "#4c72b0", border = "white",
-       main = sprintf("ROI-Histogramm (N = %d)", length(roi)),
-       xlab = "ROI", ylab = "Dichte")
+  hist(lcm, breaks = 80, freq = FALSE, col = "#4c72b0", border = "white",
+       main = sprintf("LCM-Histogramm (N = %d)", length(lcm)),
+       xlab = "Lifetime Capital Multiple (LCM)", ylab = "Dichte")
 
   # Vertikale Markierungslinien
-  abline(v = 0, col = "#c44e52", lwd = 1.5, lty = 2)
+  abline(v = 1, col = "#c44e52", lwd = 1.5, lty = 2)
   abline(v = kz$mean,   col = "#2ca02c", lwd = 1.5, lty = 1)
   abline(v = kz$median, col = "#dd8452", lwd = 1.5, lty = 1)
   abline(v = kz$var_5pct, col = "#9467bd", lwd = 1.5, lty = 3)
 
   # Legende
   legende <- c(
-    sprintf("Mean = %.2f%%",   100 * kz$mean),
-    sprintf("Median = %.2f%%", 100 * kz$median),
-    sprintf("VaR 5%% = %.2f%%", 100 * kz$var_5pct),
-    sprintf("P(ROI<0) = %.2f%%", 100 * kz$probability_of_loss)
+    sprintf("Mean = %.2f",       kz$mean),
+    sprintf("Median = %.2f",     kz$median),
+    sprintf("VaR 5%% = %.2f",    kz$var_5pct),
+    sprintf("P(LCM<1) = %.2f%%", 100 * kz$probability_of_loss)
   )
   legend("topright", legend = legende,
          col    = c("#2ca02c", "#dd8452", "#9467bd", "#c44e52"),
@@ -203,10 +234,10 @@ plot_roi <- function(roi, kz, ausgabe) {
 
   # Kennzahlen-Box
   text_str <- sprintf(
-    paste0("N = %d\nMean = %.2f%%\nMedian = %.2f%%\nStd = %.2f%%\n",
-           "VaR 5%% = %.2f%%\nP(ROI<0) = %.2f%%"),
-    kz$n, 100 * kz$mean, 100 * kz$median, 100 * kz$std,
-    100 * kz$var_5pct, 100 * kz$probability_of_loss
+    paste0("N = %d\nMean = %.2f\nMedian = %.2f\nStd = %.2f\n",
+           "VaR 5%% = %.2f\nP(LCM<1) = %.2f%%"),
+    kz$n, kz$mean, kz$median, kz$std,
+    kz$var_5pct, 100 * kz$probability_of_loss
   )
   mtext(text_str, side = 3, line = -2, adj = 0.02, cex = 0.8, font = 1)
 
@@ -215,10 +246,10 @@ plot_roi <- function(roi, kz, ausgabe) {
   # PNG-Kopie (best-effort — schlägt fehl, wenn kein PNG-Device verfügbar)
   png_ok <- tryCatch({
     png(png_path, width = 1200, height = 800, res = 150)
-    hist(roi, breaks = 80, freq = FALSE, col = "#4c72b0", border = "white",
-         main = sprintf("ROI-Histogramm (N = %d)", length(roi)),
-         xlab = "ROI", ylab = "Dichte")
-    abline(v = 0, col = "#c44e52", lwd = 1.5, lty = 2)
+    hist(lcm, breaks = 80, freq = FALSE, col = "#4c72b0", border = "white",
+         main = sprintf("LCM-Histogramm (N = %d)", length(lcm)),
+         xlab = "Lifetime Capital Multiple (LCM)", ylab = "Dichte")
+    abline(v = 1, col = "#c44e52", lwd = 1.5, lty = 2)
     abline(v = kz$mean,   col = "#2ca02c", lwd = 1.5, lty = 1)
     abline(v = kz$median, col = "#dd8452", lwd = 1.5, lty = 1)
     abline(v = kz$var_5pct, col = "#9467bd", lwd = 1.5, lty = 3)
@@ -239,11 +270,12 @@ plot_roi <- function(roi, kz, ausgabe) {
 schreibe_csv <- function(stichproben, ausgabe) {
   pfad <- file.path(ausgabe, "results_r.csv")
   df <- data.frame(
-    capex   = stichproben$capex,
-    opex    = stichproben$opex,
-    volumen = stichproben$volumen,
-    preis   = stichproben$preis,
-    roi     = stichproben$roi
+    capex        = stichproben$capex,
+    opex         = stichproben$opex,
+    opex_annual  = stichproben$opex_annual,
+    volumen      = stichproben$volumen,
+    preis        = stichproben$preis,
+    lcm          = stichproben$lcm
   )
   write.csv(df, pfad, row.names = FALSE)
   pfad
@@ -261,7 +293,7 @@ schreibe_json <- function(kz, cfg, ausgabe) {
     paste(
       '{',
       '"config": {',
-        '"iterations": %d, "seed": %d,',
+        '"iterations": %d, "seed": %d, "t_horizont": %d,',
         '"capex":  {"low": %.1f, "mode": %.1f, "high": %.1f},',
         '"opex":   {"low": %.1f, "mode": %.1f, "high": %.1f},',
         '"volume": {"low": %.1f, "mode": %.1f, "high": %.1f},',
@@ -276,7 +308,7 @@ schreibe_json <- function(kz, cfg, ausgabe) {
       '}}',
       sep = ""
     ),
-    cfg$iter, cfg$seed,
+    cfg$iter, cfg$seed, cfg$t_horizont,
     capex_min,   capex_modus,   capex_max,
     opex_min,    opex_modus,    opex_max,
     volumen_min, volumen_modus, volumen_max,
@@ -296,28 +328,30 @@ schreibe_json <- function(kz, cfg, ausgabe) {
 # ---------------------------------------------------------------------------
 
 drucke_report <- function(kz, cfg, dateien) {
-  cat("\n=== Monte-Carlo-ROI — Ergebnisreport (R-Implementierung) ===\n")
-  cat(sprintf("Iterationen : %d  (Seed = %d)\n", cfg$iter, cfg$seed))
+  cat("\n=== Monte-Carlo-LCM — Ergebnisreport (R-Implementierung) ===\n")
+  cat(sprintf("Iterationen : %d  (Seed = %d, T = %d Jahre)\n",
+              cfg$iter, cfg$seed, cfg$t_horizont))
 
   cat("\nInput-Erwartungswerte (analytisch):\n")
   cat(sprintf("  E[CAPEX]   = %10.2f $M\n", (capex_min + capex_modus + capex_max) / 3))
-  cat(sprintf("  E[OPEX]    = %10.2f $M\n", (opex_min  + opex_modus  + opex_max)  / 3))
+  cat(sprintf("  E[OPEX_jr] = %10.2f $M/Jahr  (annualisiert: %10.2f $M über T)\n",
+              (opex_min  + opex_modus  + opex_max)  / 3,
+              ((opex_min + opex_modus + opex_max) / 3) * cfg$t_horizont))
   cat(sprintf("  E[Volumen] = %10.2f M Barrel\n",
               (volumen_min + volumen_modus + volumen_max) / 3))
   lp <- lognormal_momente(preis_mu, preis_sigma)
   cat(sprintf("  E[Preis]   = %10.2f $/Barrel  (Var = %.2f)\n",
               lp$mittelwert, lp$varianz))
 
-  cat("\nROI-Kennzahlen (Stichprobe):\n")
-  cat(sprintf("  Mean     = %6.2f%%\n", 100 * kz$mean))
-  cat(sprintf("  Median   = %6.2f%%\n", 100 * kz$median))
-  cat(sprintf("  Std      = %6.2f%%\n", 100 * kz$std))
-  cat(sprintf("  P05      = %6.2f%%\n", 100 * kz$p05))
-  cat(sprintf("  P95      = %6.2f%%\n", 100 * kz$p95))
-  cat(sprintf("  VaR 5%%   = %6.2f%%\n", 100 * kz$var_5pct))
-  cat(sprintf("  P(ROI<0) = %6.2f%%\n", 100 * kz$probability_of_loss))
-  cat(sprintf("  Min/Max  = %6.2f%% / %6.2f%%\n",
-              100 * kz$min, 100 * kz$max))
+  cat("\nLCM-Kennzahlen (Stichprobe):\n")
+  cat(sprintf("  Mean     = %6.2f\n",   kz$mean))
+  cat(sprintf("  Median   = %6.2f\n",   kz$median))
+  cat(sprintf("  Std      = %6.2f\n",   kz$std))
+  cat(sprintf("  P05      = %6.2f\n",   kz$p05))
+  cat(sprintf("  P95      = %6.2f\n",   kz$p95))
+  cat(sprintf("  VaR 5%%   = %6.2f\n",   kz$var_5pct))
+  cat(sprintf("  P(LCM<1) = %6.2f%%\n", 100 * kz$probability_of_loss))
+  cat(sprintf("  Min/Max  = %6.2f / %6.2f\n", kz$min, kz$max))
 
   cat("\nArtefakte:\n")
   for (d in dateien) cat(sprintf("  - %s\n", d))
@@ -334,18 +368,18 @@ main <- function() {
   ausgabe <- cfg$ausgabe
   dir.create(ausgabe, showWarnings = FALSE, recursive = TRUE)
 
-  cat(sprintf("Monte-Carlo-ROI-Simulation (R) — %d Iterationen, Seed = %d\n",
-              cfg$iter, cfg$seed))
+  cat(sprintf("Monte-Carlo-LCM-Simulation (R) — %d Iterationen, Seed = %d, T = %d Jahre\n",
+              cfg$iter, cfg$seed, cfg$t_horizont))
   cat(sprintf("Ausgabe-Verzeichnis: %s\n\n", ausgabe))
 
-  stichproben <- run_simulation(cfg$iter, cfg$seed)
-  kz          <- kennzahlen(stichproben$roi)
+  stichproben <- run_simulation(cfg$iter, cfg$seed, cfg$t_horizont)
+  kz          <- kennzahlen(stichproben$lcm)
 
   dateien <- c()
   dateien <- c(dateien, schreibe_csv(stichproben, ausgabe))
   dateien <- c(dateien, schreibe_json(kz, cfg, ausgabe))
   if (isTRUE(cfg$plot)) {
-    dateien <- c(dateien, plot_roi(stichproben$roi, kz, ausgabe))
+    dateien <- c(dateien, plot_lcm(stichproben$lcm, kz, ausgabe))
   }
 
   drucke_report(kz, cfg, dateien)

@@ -119,6 +119,30 @@ Math-Details und Konventionen sind in den Docstrings von
 `src/monte_carlo_roi.py` (Klassen `SimulationConfig`, Funktionen
 `generate_cashflows`, `irr`, `decline_factor`) dokumentiert.
 
+### Base-R-Implementierung (`mc_simulation.R`)
+
+Die schlanke Base-R-Variante (`mc_simulation.R`, v3.0-Semantik gemäss
+[ELI-25](/ELI/issues/ELI-25)) verwendet bewusst die **kleinen** Pilotprojekt-
+Defaults aus §4.1 des Papers (1:1 kompatibel zur `run_simulation.py`-
+Referenz), nicht die Offshore-Deepwater-Skala, die für die Python-Referenz
+in [ELI-26](/ELI/issues/ELI-26) festgelegt wurde:
+
+| Variable | Verteilung | R-Default (v3.0) | Quelle |
+| --- | --- | --- | --- |
+| CAPEX | Dreiecksverteilung | `Tri(500, 750, 1200)` M USD | §4.1 |
+| OPEX  | Dreiecksverteilung (jährlich) | `Tri(80, 120, 200)` M USD/Jahr | §4.1 |
+| Fördervolumen | Dreiecksverteilung | `Tri(50, 150, 300)` M Barrel | §4.1 |
+| Ölpreis | Lognormal | `LogN(μ≈4.20, σ≈0.35)` | §3.2.2 |
+| Projekt-Lebensdauer `T` | deterministisch | `10` Jahre (CLI: `--t-horizont`) | v3.0 |
+
+Der OPEX wird im R-Skript über `T` Jahre annualisiert:
+`OPEX_total = OPEX_annual · T`. Die Ausgabe-Datei `results_r.csv`
+enthält dementsprechend zwei OPEX-Spalten (`opex_annual` und `opex`),
+sowie die Spalte `lcm` (statt `roi`). Die Verlustwahrscheinlichkeit
+ist `P(LCM < 1)` — Schwelle gemäss [ELI-25](/ELI/issues/ELI-25), nicht
+`P(ROI < 0)`. Siehe `cross_check_r_vs_py.md` für den Vergleich mit
+der Python-Referenz.
+
 ## Tests
 
 Der Plausibilitätstest läuft ohne wissenschaftliche Abhängigkeiten:
