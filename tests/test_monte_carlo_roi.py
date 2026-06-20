@@ -117,6 +117,31 @@ def test_analytical_match() -> tuple[bool, list[str]]:
             errors.append(f"{key}: analytisch {actual[key]} ≠ erwartet {exp}")
         else:
             print(f"  ok  {key} analytisch = {actual[key]:.4f}")
+    cf_cfg = config.cashflow_config()
+    if cf_cfg["project_life_years"] != 10:
+        errors.append(
+            f"project_life_years default sollte 10 sein, ist {cf_cfg['project_life_years']}"
+        )
+    else:
+        print(f"  ok  project_life_years default = {cf_cfg['project_life_years']}")
+    if cf_cfg["decline_curve"] != "hyperbolic":
+        errors.append(
+            f"decline_curve default sollte 'hyperbolic' sein, ist {cf_cfg['decline_curve']!r}"
+        )
+    else:
+        print(f"  ok  decline_curve default = {cf_cfg['decline_curve']!r}")
+    if not (0 < cf_cfg["decline_a"] <= 0.5):
+        errors.append(
+            f"decline_a default sollte in (0, 0.5] liegen, ist {cf_cfg['decline_a']}"
+        )
+    else:
+        print(f"  ok  decline_a default = {cf_cfg['decline_a']}")
+    if not (0 < cf_cfg["decline_b"] <= 1.0):
+        errors.append(
+            f"decline_b default sollte in (0, 1.0] liegen, ist {cf_cfg['decline_b']}"
+        )
+    else:
+        print(f"  ok  decline_b default = {cf_cfg['decline_b']}")
     return not errors, errors
 
 
@@ -187,14 +212,15 @@ def test_simulation_plausibility(iterations: int = 20_000) -> tuple[bool, list[s
 
 def test_sampling_bounds() -> tuple[bool, list[str]]:
     errors: list[str] = []
+    # Offshore-Deepwater-Defaults (siehe [ELI-26](/ELI/issues/ELI-26)).
     rng = random.Random(99)
     for _ in range(20_000):
-        x = triangular_sample(500.0, 750.0, 1_200.0, rng)
-        if not (500.0 <= x <= 1_200.0):
+        x = triangular_sample(8_000.0, 10_000.0, 12_000.0, rng)
+        if not (8_000.0 <= x <= 12_000.0):
             errors.append(f"Triangular out of bounds: {x}")
             break
     else:
-        print("  ok  20k Triangular-Samples innerhalb [500, 1200]")
+        print("  ok  20k Triangular-Samples innerhalb [8000, 12000]")
 
     rng = random.Random(101)
     for _ in range(20_000):
