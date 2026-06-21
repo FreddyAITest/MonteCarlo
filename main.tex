@@ -339,6 +339,48 @@ Nach $N$ Iterationen ergibt sich die empirische ROI-Verteilung $\{\text{ROI}_1, 
   \item \textbf{Median (P50)}: Der ROI-Wert, bei dem 50\% der Simulationen darüber und 50\% darunter liegen
 \end{itemize}
 
+\subsubsection*{Erweiterung: Projekt-Lebensdauer, Decline-Curve und IRR (siehe [ELI-28](/ELI/issues/ELI-28))}
+
+Seit der Modell-Erweiterung in [ELI-28](/ELI/issues/ELI-28) werden zusätzlich zu den
+vier Inputs eine Projekt-Lebensdauer $T$ (Default 10 Jahre) und eine
+Decline-Curve modelliert. Aus den gezogenen Werten wird pro Iteration
+eine jahresweise Cashflow-Reihe der Länge $T+1$ konstruiert:
+
+\begin{align}
+  \text{cashflow}_i[0] &= -\text{CAPEX}_i \\
+  \text{cashflow}_i[t] &= P_i \cdot \frac{V_i}{T} \cdot \delta(t) \;-\; \frac{\text{OPEX}_i}{T}
+                          \qquad \text{für } t = 1, \dots, T
+\end{align}
+
+wobei $\delta(t)$ der Decline-Faktor ist:
+\begin{itemize}[itemsep=1pt]
+  \item \textbf{flat}: $\delta(t) = 1$
+  \item \textbf{exponential} (Arps $b=0$): $\delta(t) = \exp(-a \cdot (t-1))$
+  \item \textbf{hyperbolic} (Arps $b \in (0,1]$):
+        $\delta(t) = \dfrac{1}{\bigl(1 + b \cdot a \cdot (t-1)\bigr)^{1/b}}$
+\end{itemize}
+
+Bei $t=1$ gilt per Konvention $\delta(1)=1$, d.\,h.\ das erste
+Produktionsjahr trägt die höchste Förderung. OPEX wird gleichmäßig auf
+die Produktionsjahre verteilt.
+
+Der \textbf{Internal Rate of Return (IRR)} $r_i$ ist die annualisierte
+Rendite, die den Kapitalwert der Cashflow-Reihe auf null setzt:
+\begin{equation}
+  \sum_{t=0}^{T} \frac{\text{cashflow}_i[t]}{(1 + r_i)^{t}} = 0
+\end{equation}
+
+IRRs werden per Bisektion (mit Newton-Polish) auf dem Intervall
+$[-0{,}99; +10]$ ermittelt; Draws ohne Vorzeichenwechsel liefern
+$\text{NaN}$. Der \textbf{Lifetime Capital Multiple (LCM)} bleibt als
+sekundäre Kennzahl bestehen.
+
+Die Default-Konfiguration verwendet die Offshore-Deepwater-Parameter aus
+[ELI-26](/ELI/issues/ELI-26) in Kombination mit der Arps-hyperbolischen
+Decline-Curve ($a=0{,}05$, $b=0{,}5$). Diese Kombination entspricht
+einem moderaten Förderrückgang und liegt im Bereich typischer
+Offshore-Tiefwasser-Projekte.
+
 \subsection{Simulationsparameter}
 
 \begin{table}[H]
